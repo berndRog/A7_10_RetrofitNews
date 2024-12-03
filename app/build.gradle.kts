@@ -1,7 +1,5 @@
-
-
-
 import org.gradle.kotlin.dsl.android
+import java.util.Properties
    import org.gradle.kotlin.dsl.invoke
    import org.gradle.kotlin.dsl.test
    /**
@@ -32,6 +30,14 @@ kotlin {
    jvmToolchain(17)
 }
 
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+   localPropertiesFile.inputStream().use { stream ->
+      localProperties.load(stream)
+   }
+}
+
 android {
    namespace = "de.rogallab.mobile"
    compileSdk = 35
@@ -48,9 +54,8 @@ android {
       vectorDrawables {
          useSupportLibrary = true
       }
-      // API Key from settings.gradle.kts
-      buildConfigField("String", "NEWS_API_KEY", "\"${project.properties["NEWS_API_KEY"]}\"")
-
+      // API Key from local.properties
+      buildConfigField("String", "NEWS_API_KEY", "\"${localProperties["NEWS_API_KEY"]}\"")
    }
 
    buildTypes {

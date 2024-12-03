@@ -1,4 +1,4 @@
-package de.rogallab.mobile.ui.news
+package de.rogallab.mobile.ui.features.article
 
 import androidx.compose.runtime.Immutable
 import de.rogallab.mobile.data.dtos.Article

@@ -1,6 +1,5 @@
-package de.rogallab.mobile.ui.news.search
+package de.rogallab.mobile.ui.features.article.composables
 
-import android.annotation.SuppressLint
 import android.view.ViewGroup
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -9,7 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -37,24 +35,24 @@ import de.rogallab.mobile.domain.utilities.logDebug
 import de.rogallab.mobile.ui.errors.ErrorParams
 import de.rogallab.mobile.ui.errors.ErrorState
 import de.rogallab.mobile.ui.errors.showError
-import de.rogallab.mobile.ui.news.NewsViewModel
+import de.rogallab.mobile.ui.features.article.ArticleIntent
+import de.rogallab.mobile.ui.features.article.ArticlesViewModel
 import de.rogallab.mobile.ui.navigation.NavEvent
 import de.rogallab.mobile.ui.navigation.NavScreen
 import de.rogallab.mobile.ui.navigation.composables.AppNavigationBar
-import de.rogallab.mobile.ui.news.NewsIntent
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticleWebScreen(
+   viewModel: ArticlesViewModel,
    navController: NavController,
-   viewModel: NewsViewModel
 ) {
    val tag = "<-ArticleScreen"
 
-   val article = viewModel.selectedArticle!!
+   val webArticleUiState by viewModel.webArticleUiStateFlow.collectAsStateWithLifecycle()
 
-   BackHandler{
+   BackHandler {
       viewModel.onNavigate(NavEvent.NavigateBack(NavScreen.NewsListScreen.route))
    }
 
@@ -76,7 +74,10 @@ fun ArticleWebScreen(
             title = { Text(stringResource(R.string.readarticle)) },
             navigationIcon = {
                IconButton(onClick = {
-                  viewModel.onNavigate(NavEvent.NavigateReverse(NavScreen.NewsListScreen.route))
+                  if(webArticleUiState.isNews)
+                     viewModel.onNavigate(NavEvent.NavigateReverse(NavScreen.NewsListScreen.route))
+                  else
+                     viewModel.onNavigate(NavEvent.NavigateReverse(NavScreen.ArticlesListScreen.route))
                }) {
                   Icon(imageVector = Icons.AutoMirrored.Default.ArrowBack,
                      contentDescription = stringResource(R.string.back))
@@ -88,9 +89,7 @@ fun ArticleWebScreen(
          FloatingActionButton(
             containerColor = MaterialTheme.colorScheme.secondary,
             onClick = {
-               // FAB clicked -> InputScreen initialized
-               logDebug(tag, "Forward Navigation: FAB clicked")
-               viewModel.onProcessNewsIntent(NewsIntent.SaveArticle)
+               viewModel.onProcessIntent(ArticleIntent.SaveArticle)
                coroutineScope.launch {
                   val snackbarResult = snackbarHostState.showSnackbar(
                      message = "Artikel gespeichert"
@@ -113,20 +112,23 @@ fun ArticleWebScreen(
          }
       }) { paddingValues ->
 
-      Column(modifier = Modifier.padding(paddingValues = paddingValues)) {
+      webArticleUiState.article?.let { article ->
          AndroidView(
+            modifier = Modifier
+               .padding(paddingValues = paddingValues)
+               .fillMaxSize(),
             factory = { context ->
                WebView(context).apply {
-               layoutParams = ViewGroup.LayoutParams(
-                  ViewGroup.LayoutParams.MATCH_PARENT,
-                  ViewGroup.LayoutParams.MATCH_PARENT
-               )
-               webViewClient = WebViewClient()
-               settings.loadWithOverviewMode = true
-               settings.javaScriptEnabled = true
-               loadUrl(article.url)
-            }
-         }, update = {
+                  layoutParams = ViewGroup.LayoutParams(
+                     ViewGroup.LayoutParams.MATCH_PARENT,
+                     ViewGroup.LayoutParams.MATCH_PARENT
+                  )
+                  webViewClient = WebViewClient()
+                  settings.loadWithOverviewMode = true
+                  settings.javaScriptEnabled = true
+                  loadUrl(article.url)
+               }
+            }, update = {
             it.loadUrl(article.url)
          })
       }
@@ -139,7 +141,7 @@ fun ArticleWebScreen(
       errorState.params?.let { params: ErrorParams ->
          logDebug(tag, "ErrorUiState: ${errorState.params}")
          // show the error with a snackbar
-         showError(snackbarHostState, params, viewModel::onNavigate )
+         showError(snackbarHostState, params, viewModel::onNavigate)
          // reset the errorState, params are copied to showError
          viewModel.onErrorEventHandled()
       }

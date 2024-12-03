@@ -1,0 +1,118 @@
+package de.rogallab.mobile.ui.features.article
+
+import androidx.lifecycle.viewModelScope
+import de.rogallab.mobile.data.dtos.Article
+import de.rogallab.mobile.domain.IArticleRepository
+import de.rogallab.mobile.domain.ResultData
+import de.rogallab.mobile.domain.utilities.logDebug
+import de.rogallab.mobile.domain.utilities.logInfo
+import de.rogallab.mobile.ui.base.BaseViewModel
+import de.rogallab.mobile.ui.errors.ErrorParams
+import de.rogallab.mobile.ui.navigation.NavEvent
+import de.rogallab.mobile.ui.navigation.NavScreen
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+class ArticlesViewModel(
+   private val _repository: IArticleRepository
+) : BaseViewModel(TAG) {
+
+   // A R T I C L E S   L I S T   S C R E E N
+   private var _articlesStateFlow: MutableStateFlow<ArticlesUiState> = MutableStateFlow(ArticlesUiState())
+   val articlesUiStateFlow: StateFlow<ArticlesUiState> =
+      _repository.selectArticles().map { resultData: ResultData<List<Article>> ->
+         when (resultData) {
+            is ResultData.Loading -> {
+               _articlesStateFlow.update { it: ArticlesUiState ->
+                  it.copy(loading = true)
+               }
+            }
+            is ResultData.Success -> {
+               _articlesStateFlow.update { it: ArticlesUiState ->
+                  it.copy(loading = false, articles = resultData.data)
+               }
+            }
+            is ResultData.Error -> {
+               onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
+            }
+         }
+         return@map _articlesStateFlow.value
+      }.stateIn(
+         scope = viewModelScope,
+         started = SharingStarted.WhileSubscribed(),
+         initialValue = _articlesStateFlow.value
+      )
+
+   // W E B   A R T I C L E   S C R E E N
+   private var _webArticleUiStateFlow: MutableStateFlow<WebArticleUiState> = MutableStateFlow(WebArticleUiState())
+   val webArticleUiStateFlow: StateFlow<WebArticleUiState> = _webArticleUiStateFlow.asStateFlow()
+
+   // transform intent into an action
+   fun onProcessIntent(intent: ArticleIntent) {
+      when (intent) {
+         is ArticleIntent.SelectedArticleChange ->
+            selectArticle(intent.isNews, intent.article)
+         is ArticleIntent.SaveArticle -> upsert()
+         is ArticleIntent.RemoveArticle -> remove(intent.article)
+         is ArticleIntent.UndoRemoveArticle -> undoRemove()
+      }
+   }
+
+   private fun selectArticle(isNews: Boolean, article: Article) {
+      logInfo(TAG, "selectArticle ()")
+      _webArticleUiStateFlow.update { it: WebArticleUiState ->
+         it.copy(isNews = isNews, article = article)
+      }
+      onNavigate(NavEvent.NavigateForward(NavScreen.ArticleWebScreen.route))
+   }
+
+   private fun upsert() {
+      logInfo(TAG, "upsert()")
+      _webArticleUiStateFlow.value.article?.let { article ->
+         viewModelScope.launch(exceptionHandler) {
+            when (val result = _repository.upsert(article)) {
+               is ResultData.Error ->
+                  onErrorEvent(ErrorParams(throwable = result.throwable, navEvent = null))
+               else -> {}
+            }
+         }
+      }
+   }
+
+   private var _removedArticle: Article? = null
+
+   private fun remove(article: Article) {
+      viewModelScope.launch(exceptionHandler) {
+         _removedArticle = article
+         when (val result = _repository.delete(article)) {
+            is ResultData.Error ->
+               onErrorEvent(ErrorParams(throwable = result.throwable, navEvent = null))
+            else -> {}
+         }
+      }
+   }
+   private fun undoRemove() {
+      _removedArticle?.let { article ->
+         logDebug(TAG, "undoRemovePerson()")
+         viewModelScope.launch(exceptionHandler) {
+            when (val resultData = _repository.upsert(article)) {
+               is ResultData.Success ->
+                  _removedArticle = null
+               is ResultData.Error ->
+                  onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
+               else -> {}
+            }
+         }
+      }
+   }
+
+   companion object {
+      private const val TAG = "<-NewsViewModel"
+   }
+}

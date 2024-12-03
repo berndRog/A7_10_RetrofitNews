@@ -36,9 +36,7 @@ class AppStart : Application() {
       const val database_name:    String = "A7_10_RetrofitNews.db"
       const val database_version: Int    = 1
       const val base_url: String = "https://newsapi.org/"
-      const val api_key:  String = "a904cda52f054306a6cc9a3494b36aad"
-
+      const val api_key:  String = BuildConfig.NEWS_API_KEY
       const val bearer_token:  String = ""
-      const val ARTICLE_SEARCH_TIME_DELAY = 1000L
    }
 }

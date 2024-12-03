@@ -1,4 +1,4 @@
-package de.rogallab.mobile.ui.news.search
+package de.rogallab.mobile.ui.features.article.composables
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -38,20 +38,20 @@ import androidx.compose.ui.unit.dp
 import de.rogallab.mobile.R
 import de.rogallab.mobile.data.dtos.Article
 import de.rogallab.mobile.ui.errors.ErrorParams
+import de.rogallab.mobile.ui.features.article.ArticleIntent
 import de.rogallab.mobile.ui.navigation.NavEvent
 import de.rogallab.mobile.ui.navigation.NavScreen
-import de.rogallab.mobile.ui.news.NewsIntent
 import kotlinx.coroutines.delay
 
 @Composable
 fun SwipeArticleListItem(
    article: Article,
    onNavigate: (NavEvent) -> Unit,
-   onProcessIntent: (NewsIntent) -> Unit,
+   onProcessIntent: (ArticleIntent) -> Unit,
    onErrorEvent: (ErrorParams) -> Unit,
    onUndoAction: () -> Unit,
    animationDuration: Int = 1000,
-   content: @androidx.compose.runtime.Composable () -> Unit
+   content: @Composable () -> Unit
 ) {
 
    var isRemoved by remember{ mutableStateOf(false) }
@@ -81,7 +81,7 @@ fun SwipeArticleListItem(
    LaunchedEffect(key1 = isRemoved) {
       if(isRemoved) {
          delay(animationDuration.toLong())
-         onProcessIntent(NewsIntent.RemoveArticle(article))
+         onProcessIntent(ArticleIntent.RemoveArticle(article))
          // undo remove?
          var params = ErrorParams(
             message = undoDeletePerson,

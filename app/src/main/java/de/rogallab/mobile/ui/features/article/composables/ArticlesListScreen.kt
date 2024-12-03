@@ -1,6 +1,5 @@
-package de.rogallab.mobile.ui.news.search
+package de.rogallab.mobile.ui.features.article.composables
 
-import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeGestures
 import androidx.compose.foundation.layout.size
@@ -17,17 +15,13 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -39,12 +33,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -54,31 +45,29 @@ import de.rogallab.mobile.domain.utilities.logDebug
 import de.rogallab.mobile.ui.errors.ErrorParams
 import de.rogallab.mobile.ui.errors.ErrorState
 import de.rogallab.mobile.ui.errors.showError
-import de.rogallab.mobile.ui.news.NewsIntent
-import de.rogallab.mobile.ui.news.NewsViewModel
+import de.rogallab.mobile.ui.features.article.ArticleIntent
+import de.rogallab.mobile.ui.features.article.ArticlesViewModel
+import de.rogallab.mobile.ui.features.news.composables.NewsItem
+import de.rogallab.mobile.ui.navigation.NavEvent
+import de.rogallab.mobile.ui.navigation.NavScreen
 import de.rogallab.mobile.ui.navigation.composables.AppNavigationBar
 
 @OptIn(ExperimentalMaterial3Api::class)
+@ExperimentalComposeUiApi
 @Composable
-fun NewsListScreen(
-   viewModel: NewsViewModel,
+fun ArticlesListScreen(
+   viewModel: ArticlesViewModel,
    navController: NavController
 ) {
-   //12345678901234567890123
-   val tag = "<-NewsListScreen"
+   val tag = "<-ArticlesListScreen"
 
-   val newsUiState by viewModel.newsUiStateFlow.collectAsStateWithLifecycle()
-   val searchUiState by viewModel.searchUiStateFlow.collectAsStateWithLifecycle()
+   val articlesUiState by viewModel.articlesUiStateFlow.collectAsStateWithLifecycle()
+
+   BackHandler {
+      viewModel.onNavigate(NavEvent.NavigateBack(NavScreen.NewsListScreen.route))
+   }
 
    val snackbarHostState = remember { SnackbarHostState() }
-
-   // Back navigation
-   val activity = LocalContext.current as Activity
-   BackHandler(
-      enabled = true,
-      onBack = {  activity.finish() }
-   )
-
    val windowInsets = WindowInsets.systemBars
       .add(WindowInsets.safeGestures)
 
@@ -89,12 +78,13 @@ fun NewsListScreen(
          .background(color = MaterialTheme.colorScheme.surface),
       topBar = {
          TopAppBar(
-            title = { Text(stringResource(R.string.searchnews)) },
+            title = { Text(stringResource(R.string.savedarticles)) },
             navigationIcon = {
-               IconButton(onClick = { activity.finish()
-            }) {
+               IconButton(onClick = {
+                  viewModel.onNavigate(NavEvent.NavigateReverse(NavScreen.NewsListScreen.route))
+               }) {
                   Icon(
-                     imageVector = Icons.Default.Menu,
+                     imageVector = Icons.AutoMirrored.Default.ArrowBack,
                      contentDescription = stringResource(R.string.back)
                   )
                }
@@ -113,63 +103,51 @@ fun NewsListScreen(
          }
       }
    ) { paddingValues ->
-      Column(
-         modifier = Modifier.padding(paddingValues = paddingValues)
-      ) {
-         val keyboardController = LocalSoftwareKeyboardController.current
-         OutlinedTextField(
+      if (articlesUiState.loading) {
+         Column(
             modifier = Modifier
-               .padding(horizontal = 8.dp)
-               .padding(bottom = 8.dp)
-               .fillMaxWidth(),
-            value = searchUiState.searchText,
-            onValueChange = { it ->
-               viewModel.onProcessNewsIntent(NewsIntent.SearchTextChange(it))
-            },
-            label = {
-               Text(text = stringResource(R.string.searchtext))
-            },
-            leadingIcon = {
-               Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search News")
-            },
-            keyboardOptions = KeyboardOptions(
-               keyboardType = KeyboardType.Text,
-               imeAction = ImeAction.Search
-            ),
-            keyboardActions = KeyboardActions(
-               onSearch = {
-                  viewModel.onProcessNewsIntent(NewsIntent.TriggerSearch)
-                  keyboardController?.hide()
-               }
-            ),
-            textStyle = MaterialTheme.typography.titleMedium,
-            singleLine = true,
-         )
-
-         if (newsUiState.loading) {
-            Column(
-               modifier = Modifier.padding(horizontal = 8.dp).fillMaxSize(),
-               verticalArrangement = Arrangement.Center,
-               horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-               CircularProgressIndicator(modifier = Modifier.size(80.dp))
-            }
-         } else if (newsUiState.news != null)
-
-            newsUiState.news!!.articles?.let { articles: List<Article> ->
-               LazyColumn(state = rememberLazyListState()) {
-                  items(articles) { article: Article ->
-                     // content
-                     NewsItem(
-                        article,
-                        onClick = {
-                           viewModel.onProcessNewsIntent(NewsIntent.SelectedArticleChange(article))
-                        }
-                     )
+               .padding(paddingValues = paddingValues)
+               .padding(horizontal = 16.dp).fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+         ) {
+            CircularProgressIndicator(modifier = Modifier.size(80.dp))
+         }
+      } else if (articlesUiState.articles != null) {
+         LazyColumn(
+            modifier = Modifier
+               .padding(paddingValues = paddingValues)
+               .fillMaxSize(),
+            state = rememberLazyListState()
+         ) {
+            items(
+               items = articlesUiState.articles!!.sortedBy { it.id }.reversed(),
+               key = { it: Article -> it.id!! },
+            ) { article ->
+               //
+               SwipeArticleListItem(
+                  article = article,                        // item
+                  onNavigate = { it: NavEvent ->
+                     viewModel.onProcessIntent(
+                        ArticleIntent.SelectedArticleChange(false, article))
+                     viewModel.onNavigate(it)
+                  },     // navigate to DetailScreen
+                  onProcessIntent = {                     // remove item
+                     viewModel.onProcessIntent(ArticleIntent.RemoveArticle(article))
+                  },
+                  onErrorEvent = viewModel::onErrorEvent, // undo -> show snackbar
+                  onUndoAction = {                        // undo -> action
+                     viewModel.onProcessIntent(ArticleIntent.UndoRemoveArticle)
                   }
+               ) {
+                  NewsItem(
+                     article,
+                     onClick = { }
+                  )
                }
             }
-       } // Column
+         }
+      }
    } // Scaffold
 
    val errorState: ErrorState

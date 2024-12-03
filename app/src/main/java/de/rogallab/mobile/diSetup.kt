@@ -11,13 +11,16 @@ import de.rogallab.mobile.data.network.NetworkConnectivity
 import de.rogallab.mobile.data.network.createOkHttpClient
 import de.rogallab.mobile.data.network.createRetrofit
 import de.rogallab.mobile.data.network.createWebservice
+import de.rogallab.mobile.data.repositories.ArticleRepository
 import de.rogallab.mobile.data.repositories.NewsRepository
+import de.rogallab.mobile.domain.IArticleRepository
 import de.rogallab.mobile.domain.INewsRepository
 import de.rogallab.mobile.domain.utilities.logError
 import de.rogallab.mobile.domain.utilities.logInfo
 import de.rogallab.mobile.ui.IErrorHandler
 import de.rogallab.mobile.ui.errors.ErrorParams
-import de.rogallab.mobile.ui.news.NewsViewModel
+import de.rogallab.mobile.ui.features.article.ArticlesViewModel
+import de.rogallab.mobile.ui.features.news.NewsViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
@@ -37,9 +40,13 @@ val uiModules: Module = module {
    logInfo(tag, "viewModel -> NewsViewModel")
    viewModel<NewsViewModel> {
       NewsViewModel(
-         _context = androidContext(),
-         _repository = get<INewsRepository>(),
-         _dispatcher = Dispatchers.IO
+         _repository = get<INewsRepository>()
+      )
+   }
+   logInfo(tag, "viewModel -> ArticlesViewModel")
+   viewModel<ArticlesViewModel> {
+      ArticlesViewModel(
+         _repository = get<IArticleRepository>()
       )
    }
 }
@@ -127,8 +134,15 @@ val dataModules = module {
    logInfo(tag, "single    -> PersonRepository: IPersonRepository")
    single<INewsRepository> {
       NewsRepository(
-         _articleDao = get<IArticleDao>(),
          _newsWebservice = get<INewsWebservice>(),
+         _dispatcher = get<CoroutineDispatcher>(named("DispatcherIO")),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
+      )
+   }
+   logInfo(tag, "single    -> ArticleRepository: IArcticleRepository")
+   single<IArticleRepository> {
+      ArticleRepository(
+         _articleDao = get<IArticleDao>(),
          _dispatcher = get<CoroutineDispatcher>(named("DispatcherIO")),
          _exceptionHandler = get<CoroutineExceptionHandler>()
       )

@@ -1,4 +1,4 @@
-package de.rogallab.mobile.ui.news.search
+package de.rogallab.mobile.ui.features.news.composables
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
