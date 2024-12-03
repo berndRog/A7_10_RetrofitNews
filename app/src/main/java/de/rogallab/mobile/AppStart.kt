@@ -9,8 +9,6 @@ import org.koin.core.logger.Level
 
 class AppStart : Application() {
 
-   val apiKey = BuildConfig.NEWS_API_KEY
-
    override fun onCreate() {
       super.onCreate()
 
@@ -26,7 +24,6 @@ class AppStart : Application() {
          // Load modules
          modules(domainModules, dataModules, uiModules)
       }
-
    }
 
    companion object {

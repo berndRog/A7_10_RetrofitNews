@@ -17,4 +17,3 @@ fun createRetrofit(
       .addConverterFactory(gsonConverterFactory)
       .build()
 }
-

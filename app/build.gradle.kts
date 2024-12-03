@@ -55,9 +55,9 @@ android {
          useSupportLibrary = true
       }
       // API Key from local.properties
-      buildConfigField("String", "NEWS_API_KEY", "\"${localProperties["NEWS_API_KEY"]}\"")
+      val newsApiKey = localProperties["NEWS_API_KEY"] as String
+      buildConfigField("String", "NEWS_API_KEY", "\"$newsApiKey\"")
    }
-
    buildTypes {
       release {
          isMinifyEnabled = false
