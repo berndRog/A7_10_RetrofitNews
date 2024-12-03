@@ -129,7 +129,7 @@ fun ArticlesListScreen(
                   article = article,                        // item
                   onNavigate = { it: NavEvent ->
                      viewModel.onProcessIntent(
-                        ArticleIntent.SelectedArticleChange(false, article))
+                        ArticleIntent.ShowWebArticle(false, article))
                      viewModel.onNavigate(it)
                   },     // navigate to DetailScreen
                   onProcessIntent = {                     // remove item

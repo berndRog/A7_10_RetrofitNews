@@ -25,36 +25,32 @@ class NewsViewModel(
    private val _repository: INewsRepository
 ) : BaseViewModel(TAG) {
 
-   var everythingPage = 1
+   // N E W S   L I S T   S C R E E N
    private var _newsUiStateFlow: MutableStateFlow<NewsUiState> = MutableStateFlow(NewsUiState())
 
-   // Refreshable Scenario
+   // Refreshable Scenario, fetch news from webApi
    private val reloadTrigger = MutableSharedFlow<Unit>(replay = 1)
    init {
       logDebug(TAG, "init{}")
       //triggerSearch()
    }
-
-   // fetch news from webApi
+   var everythingPage = 1
    @OptIn(ExperimentalCoroutinesApi::class)
    val newsUiStateFlow: StateFlow<NewsUiState> = reloadTrigger.flatMapLatest {
       _repository.getEverything(
          _searchUiStateFlow.value.searchText, everythingPage
       ).map { resultData: ResultData<News> ->
          when (resultData) {
-            is ResultData.Loading -> {
+            is ResultData.Loading ->
                _newsUiStateFlow.update { it: NewsUiState ->
                   it.copy(loading = true)
                }
-            }
-            is ResultData.Success -> {
+            is ResultData.Success ->
                _newsUiStateFlow.update { it: NewsUiState ->
                   it.copy(loading = false, news = resultData.data)
                }
-            }
-            is ResultData.Error -> {
+            is ResultData.Error ->
                onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
-            }
          }
          return@map _newsUiStateFlow.value
       }
@@ -63,16 +59,13 @@ class NewsViewModel(
       SharingStarted.WhileSubscribed(),
       NewsUiState()
    )
-
    fun triggerSearch() {
       viewModelScope.launch {
          reloadTrigger.emit(Unit)
       }
    }
 
-   var selectedArticle: Article? = null
-      private set
-
+   // S E A R C H   B A R   O N   T O P
    private var _searchUiStateFlow: MutableStateFlow<SearchUiState> = MutableStateFlow(SearchUiState())
    val searchUiStateFlow: StateFlow<SearchUiState> = _searchUiStateFlow.asStateFlow()
 

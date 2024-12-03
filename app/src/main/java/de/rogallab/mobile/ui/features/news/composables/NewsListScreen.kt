@@ -67,14 +67,11 @@ fun NewsListScreen(
    articlesViewModel: ArticlesViewModel,
    navController: NavController
 ) {
-   //12345678901234567890123
    val tag = "<-NewsListScreen"
 
    val newsUiState by newsViewModel.newsUiStateFlow.collectAsStateWithLifecycle()
    val searchUiState by newsViewModel.searchUiStateFlow.collectAsStateWithLifecycle()
 
-
-   // Back navigation
    val activity = LocalContext.current as Activity
    BackHandler(
       enabled = true,
@@ -94,8 +91,9 @@ fun NewsListScreen(
          TopAppBar(
             title = { Text(stringResource(R.string.searchnews)) },
             navigationIcon = {
-               IconButton(onClick = { activity.finish()
-            }) {
+               IconButton(onClick = {
+                  activity.finish()
+               }) {
                   Icon(
                      imageVector = Icons.Default.Menu,
                      contentDescription = stringResource(R.string.back)
@@ -119,45 +117,27 @@ fun NewsListScreen(
       Column(
          modifier = Modifier.padding(paddingValues = paddingValues)
       ) {
-         val keyboardController = LocalSoftwareKeyboardController.current
-         OutlinedTextField(
-            modifier = Modifier
-               .padding(horizontal = 8.dp)
-               .padding(bottom = 8.dp)
-               .fillMaxWidth(),
-            value = searchUiState.searchText,
-            onValueChange = { it ->
+         SearchField(
+            searchText = searchUiState.searchText,
+            onSearchTextChange = { it ->
                newsViewModel.onProcessIntent(NewsIntent.SearchTextChange(it))
             },
-            label = {
-               Text(text = stringResource(R.string.searchtext))
-            },
-            leadingIcon = {
-               Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search News")
-            },
-            keyboardOptions = KeyboardOptions(
-               keyboardType = KeyboardType.Text,
-               imeAction = ImeAction.Search
-            ),
-            keyboardActions = KeyboardActions(
-               onSearch = {
-                  newsViewModel.onProcessIntent(NewsIntent.TriggerSearch)
-                  keyboardController?.hide()
-               }
-            ),
-            textStyle = MaterialTheme.typography.titleMedium,
-            singleLine = true,
+            onTriggerSearch = {
+               newsViewModel.onProcessIntent(NewsIntent.TriggerSearch)
+            }
          )
 
          if (newsUiState.loading) {
             Column(
-               modifier = Modifier.padding(horizontal = 8.dp).fillMaxSize(),
+               modifier = Modifier
+                  .padding(horizontal = 8.dp)
+                  .fillMaxSize(),
                verticalArrangement = Arrangement.Center,
                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                CircularProgressIndicator(modifier = Modifier.size(80.dp))
             }
-         } else if (newsUiState.news != null)
+         } else if (newsUiState.news != null) {
 
             newsUiState.news!!.articles?.let { articles: List<Article> ->
                LazyColumn(state = rememberLazyListState()) {
@@ -167,12 +147,13 @@ fun NewsListScreen(
                         article,
                         onClick = {
                            articlesViewModel.onProcessIntent(
-                              ArticleIntent.SelectedArticleChange(true, article))
+                              ArticleIntent.ShowWebArticle(true, article))
                         }
                      )
                   }
                }
             }
+         }
        } // Column
    } // Scaffold
 

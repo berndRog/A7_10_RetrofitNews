@@ -28,19 +28,16 @@ class ArticlesViewModel(
    val articlesUiStateFlow: StateFlow<ArticlesUiState> =
       _repository.selectArticles().map { resultData: ResultData<List<Article>> ->
          when (resultData) {
-            is ResultData.Loading -> {
+            is ResultData.Loading ->
                _articlesStateFlow.update { it: ArticlesUiState ->
                   it.copy(loading = true)
                }
-            }
-            is ResultData.Success -> {
+            is ResultData.Success ->
                _articlesStateFlow.update { it: ArticlesUiState ->
                   it.copy(loading = false, articles = resultData.data)
                }
-            }
-            is ResultData.Error -> {
+            is ResultData.Error ->
                onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
-            }
          }
          return@map _articlesStateFlow.value
       }.stateIn(
@@ -56,7 +53,7 @@ class ArticlesViewModel(
    // transform intent into an action
    fun onProcessIntent(intent: ArticleIntent) {
       when (intent) {
-         is ArticleIntent.SelectedArticleChange ->
+         is ArticleIntent.ShowWebArticle ->
             selectArticle(intent.isNews, intent.article)
          is ArticleIntent.SaveArticle -> upsert()
          is ArticleIntent.RemoveArticle -> remove(intent.article)

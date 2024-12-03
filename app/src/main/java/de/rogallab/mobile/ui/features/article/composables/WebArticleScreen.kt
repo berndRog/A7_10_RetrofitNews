@@ -48,21 +48,22 @@ fun ArticleWebScreen(
    viewModel: ArticlesViewModel,
    navController: NavController,
 ) {
-   val tag = "<-ArticleScreen"
-
    val webArticleUiState by viewModel.webArticleUiStateFlow.collectAsStateWithLifecycle()
 
    BackHandler {
-      viewModel.onNavigate(NavEvent.NavigateBack(NavScreen.NewsListScreen.route))
+      if(webArticleUiState.isNews)
+         viewModel.onNavigate(NavEvent.NavigateBack(NavScreen.NewsListScreen.route))
+      else
+         viewModel.onNavigate(NavEvent.NavigateBack(NavScreen.ArticlesListScreen.route))
    }
-
-   val snackbarHostState = remember { SnackbarHostState() }
-   val coroutineScope = rememberCoroutineScope()
 
    val windowInsets = WindowInsets.systemBars
       .add(WindowInsets.captionBar)
       .add(WindowInsets.ime)
       .add(WindowInsets.safeGestures)
+
+   val snackbarHostState = remember { SnackbarHostState() }
+   val coroutineScope = rememberCoroutineScope()
 
    Scaffold(
       modifier = Modifier
