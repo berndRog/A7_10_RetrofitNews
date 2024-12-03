@@ -28,7 +28,7 @@ mockito = "5.14.2"
 mockitoKotlin = "5.4.0"
 
 # plugins
-agp = "8.7.2"
+agp = "8.7.3"
 compose-compiler = "2.0.0"  # must be same version as kotlin!?
 kotlin = "2.0.0"
 ksp = "2.0.0-1.0.21"
