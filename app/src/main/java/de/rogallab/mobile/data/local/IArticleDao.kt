@@ -1,4 +1,4 @@
-package de.rogallab.mobile.data
+package de.rogallab.mobile.data.local
 
 import androidx.room.*
 import de.rogallab.mobile.data.dtos.Article
@@ -14,6 +14,6 @@ public interface IArticleDao {
    public suspend fun upsert(article: Article): Long
 
    @Delete
-   public suspend fun delete(article: Article)
+   public suspend fun remove(article: Article)
 
 }

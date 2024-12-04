@@ -1,4 +1,4 @@
-package de.rogallab.mobile.data.network
+package de.rogallab.mobile.data.remote.network
 
 import de.rogallab.mobile.domain.utilities.logDebug
 import retrofit2.Retrofit

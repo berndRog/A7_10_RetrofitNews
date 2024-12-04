@@ -1,4 +1,4 @@
-package de.rogallab.mobile.data.network
+package de.rogallab.mobile.data.remote.network
 
 import okhttp3.Interceptor
 import okhttp3.Request

@@ -1,6 +1,6 @@
 package de.rogallab.mobile.data.repositories
 
-import de.rogallab.mobile.data.IArticleDao
+import de.rogallab.mobile.data.local.IArticleDao
 import de.rogallab.mobile.data.dtos.Article
 import de.rogallab.mobile.domain.IArticleRepository
 import de.rogallab.mobile.domain.ResultData
@@ -41,11 +41,11 @@ class ArticleRepository(
          }
       }
 
-   override suspend fun delete(article: Article): ResultData<Unit> =
+   override suspend fun remove(article: Article): ResultData<Unit> =
       withContext(_dispatcher + _exceptionHandler) {
          return@withContext try {
             logDebug(tag, "delete article")
-            _articleDao.delete(article)
+            _articleDao.remove(article)
             ResultData.Success(Unit)
          } catch (t: Throwable) {
             ResultData.Error(t)

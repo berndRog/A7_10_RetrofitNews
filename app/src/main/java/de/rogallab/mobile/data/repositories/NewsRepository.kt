@@ -1,6 +1,6 @@
 package de.rogallab.mobile.data.repositories
 
-import de.rogallab.mobile.data.INewsWebservice
+import de.rogallab.mobile.data.remote.INewsWebservice
 import de.rogallab.mobile.data.dtos.News
 import de.rogallab.mobile.domain.INewsRepository
 import de.rogallab.mobile.domain.ResultData

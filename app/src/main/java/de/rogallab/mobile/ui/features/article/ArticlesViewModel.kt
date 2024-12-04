@@ -87,7 +87,7 @@ class ArticlesViewModel(
    private fun remove(article: Article) {
       viewModelScope.launch(exceptionHandler) {
          _removedArticle = article
-         when (val result = _repository.delete(article)) {
+         when (val result = _repository.remove(article)) {
             is ResultData.Error ->
                onErrorEvent(ErrorParams(throwable = result.throwable, navEvent = null))
             else -> {}

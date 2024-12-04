@@ -1,4 +1,5 @@
-package de.rogallab.mobile.data
+package de.rogallab.mobile.data.remote
+
 
 import de.rogallab.mobile.data.dtos.News
 import retrofit2.Response

@@ -1,4 +1,4 @@
-package de.rogallab.mobile.data.database
+package de.rogallab.mobile.data.local.database
 
 import androidx.room.TypeConverter
 import de.rogallab.mobile.data.dtos.Source

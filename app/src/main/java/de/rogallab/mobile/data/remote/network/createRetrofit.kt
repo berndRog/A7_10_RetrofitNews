@@ -1,4 +1,4 @@
-package de.rogallab.mobile.data.network
+package de.rogallab.mobile.data.remote.network
 
 import de.rogallab.mobile.AppStart
 import de.rogallab.mobile.domain.utilities.logDebug
@@ -12,7 +12,7 @@ fun createRetrofit(
 ) : Retrofit {
    logDebug("<-Retrofit", "create()")
    return Retrofit.Builder()
-      .baseUrl(AppStart.base_url)
+      .baseUrl(AppStart.BASE_URL)
       .client(okHttpClient)
       .addConverterFactory(gsonConverterFactory)
       .build()

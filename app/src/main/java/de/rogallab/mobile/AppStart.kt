@@ -28,12 +28,13 @@ class AppStart : Application() {
 
    companion object {
       private const val TAG = "<-AppStart"
-      const val isInfo = true
-      const val isDebug = true
-      const val database_name:    String = "A7_10_RetrofitNews.db"
-      const val database_version: Int    = 1
-      const val base_url: String = "https://newsapi.org/"
-      const val api_key:  String = BuildConfig.NEWS_API_KEY
-      const val bearer_token:  String = ""
+      const val IS_INFO = true
+      const val IS_DEBUG = true
+      const val DATABASE_NAME:    String = "A7_10_RetrofitNews.db"
+      const val DATABASE_VERSION: Int    = 1
+
+      const val BASE_URL: String = "https://newsapi.org/"
+      const val API_KEY:  String = BuildConfig.NEWS_API_KEY
+      const val BEARER_TOKEN:  String = ""
    }
 }

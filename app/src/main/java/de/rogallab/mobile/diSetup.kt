@@ -1,16 +1,16 @@
 package de.rogallab.mobile
 
 import androidx.room.Room
-import de.rogallab.mobile.data.IArticleDao
-import de.rogallab.mobile.data.INewsWebservice
-import de.rogallab.mobile.data.database.AppDatabase
-import de.rogallab.mobile.data.network.ApiKey
-import de.rogallab.mobile.data.network.BearerToken
-import de.rogallab.mobile.data.network.NetworkConnection
-import de.rogallab.mobile.data.network.NetworkConnectivity
-import de.rogallab.mobile.data.network.createOkHttpClient
-import de.rogallab.mobile.data.network.createRetrofit
-import de.rogallab.mobile.data.network.createWebservice
+import de.rogallab.mobile.data.local.IArticleDao
+import de.rogallab.mobile.data.local.database.AppDatabase
+import de.rogallab.mobile.data.remote.INewsWebservice
+import de.rogallab.mobile.data.remote.network.ApiKey
+import de.rogallab.mobile.data.remote.network.BearerToken
+import de.rogallab.mobile.data.remote.network.NetworkConnection
+import de.rogallab.mobile.data.remote.network.NetworkConnectivity
+import de.rogallab.mobile.data.remote.network.createOkHttpClient
+import de.rogallab.mobile.data.remote.network.createRetrofit
+import de.rogallab.mobile.data.remote.network.createWebservice
 import de.rogallab.mobile.data.repositories.ArticleRepository
 import de.rogallab.mobile.data.repositories.NewsRepository
 import de.rogallab.mobile.domain.IArticleRepository
@@ -77,7 +77,7 @@ val dataModules = module {
       Room.databaseBuilder(
          context = androidContext(),
          klass = AppDatabase::class.java,
-         name = AppStart.database_name
+         name = AppStart.DATABASE_NAME
       ).build()
    }
    logInfo(tag, "single    -> IArticleDao")
@@ -96,7 +96,7 @@ val dataModules = module {
    single<BearerToken> { BearerToken() }
 
    logInfo(tag, "single    -> ApiKey")
-   single<ApiKey> { ApiKey() }
+   single<ApiKey> { ApiKey(AppStart.API_KEY) }
 
    logInfo(tag, "single    -> HttpLoggingInterceptor")
    single<HttpLoggingInterceptor> {
