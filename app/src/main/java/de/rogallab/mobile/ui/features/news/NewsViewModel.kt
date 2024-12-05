@@ -1,14 +1,15 @@
 package de.rogallab.mobile.ui.features.news
 
 import androidx.lifecycle.viewModelScope
-import de.rogallab.mobile.data.dtos.Article
 import de.rogallab.mobile.data.dtos.News
 import de.rogallab.mobile.domain.INewsRepository
 import de.rogallab.mobile.domain.ResultData
 import de.rogallab.mobile.domain.utilities.logDebug
 import de.rogallab.mobile.domain.utilities.logInfo
+import de.rogallab.mobile.ui.IErrorHandler
 import de.rogallab.mobile.ui.base.BaseViewModel
 import de.rogallab.mobile.ui.errors.ErrorParams
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,8 +23,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class NewsViewModel(
-   private val _repository: INewsRepository
-) : BaseViewModel(TAG) {
+   private val _repository: INewsRepository,
+   private val _exceptionHandler: CoroutineExceptionHandler,
+) : BaseViewModel(_exceptionHandler,TAG) {
 
    // N E W S   L I S T   S C R E E N
    private var _newsUiStateFlow: MutableStateFlow<NewsUiState> = MutableStateFlow(NewsUiState())
@@ -41,16 +43,13 @@ class NewsViewModel(
          _searchUiStateFlow.value.searchText, everythingPage
       ).map { resultData: ResultData<News> ->
          when (resultData) {
-            is ResultData.Loading ->
-               _newsUiStateFlow.update { it: NewsUiState ->
+            is ResultData.Loading -> _newsUiStateFlow.update { it: NewsUiState ->
                   it.copy(loading = true)
                }
-            is ResultData.Success ->
-               _newsUiStateFlow.update { it: NewsUiState ->
+            is ResultData.Success -> _newsUiStateFlow.update { it: NewsUiState ->
                   it.copy(loading = false, news = resultData.data)
                }
-            is ResultData.Error ->
-               onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
+            is ResultData.Error -> handleErrorEvent(resultData.throwable)
          }
          return@map _newsUiStateFlow.value
       }

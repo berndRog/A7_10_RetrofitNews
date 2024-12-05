@@ -18,7 +18,6 @@ import de.rogallab.mobile.domain.INewsRepository
 import de.rogallab.mobile.domain.utilities.logError
 import de.rogallab.mobile.domain.utilities.logInfo
 import de.rogallab.mobile.ui.IErrorHandler
-import de.rogallab.mobile.ui.errors.ErrorParams
 import de.rogallab.mobile.ui.features.article.ArticlesViewModel
 import de.rogallab.mobile.ui.features.news.NewsViewModel
 import kotlinx.coroutines.CoroutineDispatcher
@@ -40,13 +39,15 @@ val uiModules: Module = module {
    logInfo(tag, "viewModel -> NewsViewModel")
    viewModel<NewsViewModel> {
       NewsViewModel(
-         _repository = get<INewsRepository>()
+         _repository = get<INewsRepository>(),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }
    logInfo(tag, "viewModel -> ArticlesViewModel")
    viewModel<ArticlesViewModel> {
       ArticlesViewModel(
-         _repository = get<IArticleRepository>()
+         _repository = get<IArticleRepository>(),
+         _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }
 }
@@ -54,18 +55,17 @@ val uiModules: Module = module {
 val domainModules: Module = module {
    val tag = "<-domainModules"
 
+   logInfo(tag, "single    -> CoroutineExceptionHandler")
    single<CoroutineExceptionHandler> {
       CoroutineExceptionHandler { _, exception ->
-         // Handle the exception here
-         val e = RuntimeException("Coroutine exception: ${exception.localizedMessage}")
-         logError(tag, e.message ?: "Coroutine exception")
-         val params = ErrorParams(throwable = e)
-         get<IErrorHandler>().onErrorEvent(params)
+         logError(tag, "Coroutine exception: ${exception.localizedMessage}")
       }
    }
-
+   logInfo(tag, "single    -> named(DispatcherIO)")
    single<CoroutineDispatcher>(named("DispatcherIO")) { Dispatchers.IO }
+   logInfo(tag, "single    -> named(DispatcherMain)")
    single<CoroutineDispatcher>(named("DispatcherMain")) { Dispatchers.Main }
+
 }
 
 val dataModules = module {

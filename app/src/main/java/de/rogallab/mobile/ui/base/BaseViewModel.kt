@@ -1,7 +1,6 @@
 package de.rogallab.mobile.ui.base
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import de.rogallab.mobile.domain.utilities.logDebug
 import de.rogallab.mobile.domain.utilities.logError
 import de.rogallab.mobile.domain.utilities.logVerbose
@@ -12,6 +11,10 @@ import de.rogallab.mobile.ui.errors.ErrorState
 import de.rogallab.mobile.ui.navigation.NavEvent
 import de.rogallab.mobile.ui.navigation.NavState
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,17 +25,16 @@ import java.net.SocketTimeoutException
 import kotlin.coroutines.cancellation.CancellationException
 
 open class BaseViewModel(
+   private val _exceptionHandler: CoroutineExceptionHandler,
    private val _tag: String = "<-BaseViewModel"
 ): ViewModel(),
    IErrorHandler,
    INavigationHandler {
 
-   // =========================================================================
-   // Define the CoroutineExceptionHandler
-   // =========================================================================
-   protected val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-      // Handle the exception (e.g., show a message to the user)
-      onErrorEvent(ErrorParams(throwable = throwable))
+   private val _coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+   override fun onCleared() {
+      super.onCleared()
+      _coroutineScope.coroutineContext.cancel()
    }
 
    // =========================================================================
@@ -43,9 +45,12 @@ open class BaseViewModel(
    override val errorStateFlow: StateFlow<ErrorState> =
       _errorStateFlow.asStateFlow()
 
+   override fun handleErrorEvent(t: Throwable) {
+      onErrorEvent(ErrorParams(throwable = t, navEvent = null))
+   }
+
    // save the previous event
    private var savedParams: ErrorParams? = null
-
    override fun onErrorEvent(params: ErrorParams) {
       if (params == savedParams) return
 
@@ -70,7 +75,7 @@ open class BaseViewModel(
    }
 
    override fun onErrorEventHandled() {
-      viewModelScope.launch(exceptionHandler) {
+      _coroutineScope.launch(_exceptionHandler) {
          delay(100)
          logDebug(_tag, "onErrorEventHandled()")
          savedParams = null
@@ -104,7 +109,7 @@ open class BaseViewModel(
 
    // delete the last navigation event when handled
    override fun onNavEventHandled() {
-      viewModelScope.launch(exceptionHandler) {
+      _coroutineScope.launch(_exceptionHandler) {
          delay(100) // Delay to ensure navigation has been processed
          logVerbose(_tag, "onNavEventHandled()")
          _navStateFlow.update { it: NavState ->
@@ -113,4 +118,7 @@ open class BaseViewModel(
          savedNavEvent = null
       }
    }
+
+
+
 }

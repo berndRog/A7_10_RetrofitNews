@@ -7,9 +7,9 @@ import de.rogallab.mobile.domain.ResultData
 import de.rogallab.mobile.domain.utilities.logDebug
 import de.rogallab.mobile.domain.utilities.logInfo
 import de.rogallab.mobile.ui.base.BaseViewModel
-import de.rogallab.mobile.ui.errors.ErrorParams
 import de.rogallab.mobile.ui.navigation.NavEvent
 import de.rogallab.mobile.ui.navigation.NavScreen
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,8 +20,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ArticlesViewModel(
-   private val _repository: IArticleRepository
-) : BaseViewModel(TAG) {
+   private val _repository: IArticleRepository,
+   private val _exceptionHandler: CoroutineExceptionHandler,
+) : BaseViewModel(_exceptionHandler, TAG) {
 
    // A R T I C L E S   L I S T   S C R E E N
    private var _articlesStateFlow: MutableStateFlow<ArticlesUiState> = MutableStateFlow(ArticlesUiState())
@@ -36,8 +37,7 @@ class ArticlesViewModel(
                _articlesStateFlow.update { it: ArticlesUiState ->
                   it.copy(loading = false, articles = resultData.data)
                }
-            is ResultData.Error ->
-               onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
+            is ResultData.Error -> handleErrorEvent(resultData.throwable)
          }
          return@map _articlesStateFlow.value
       }.stateIn(
@@ -72,10 +72,9 @@ class ArticlesViewModel(
    private fun upsert() {
       logInfo(TAG, "upsert()")
       _webArticleUiStateFlow.value.article?.let { article ->
-         viewModelScope.launch(exceptionHandler) {
-            when (val result = _repository.upsert(article)) {
-               is ResultData.Error ->
-                  onErrorEvent(ErrorParams(throwable = result.throwable, navEvent = null))
+         viewModelScope.launch(_exceptionHandler) {
+            when (val resultData = _repository.upsert(article)) {
+               is ResultData.Error -> handleErrorEvent(resultData.throwable)
                else -> {}
             }
          }
@@ -85,11 +84,10 @@ class ArticlesViewModel(
    private var _removedArticle: Article? = null
 
    private fun remove(article: Article) {
-      viewModelScope.launch(exceptionHandler) {
+      viewModelScope.launch(_exceptionHandler) {
          _removedArticle = article
-         when (val result = _repository.remove(article)) {
-            is ResultData.Error ->
-               onErrorEvent(ErrorParams(throwable = result.throwable, navEvent = null))
+         when (val resultData = _repository.remove(article)) {
+            is ResultData.Error -> handleErrorEvent(resultData.throwable)
             else -> {}
          }
       }
@@ -97,12 +95,10 @@ class ArticlesViewModel(
    private fun undoRemove() {
       _removedArticle?.let { article ->
          logDebug(TAG, "undoRemovePerson()")
-         viewModelScope.launch(exceptionHandler) {
+         viewModelScope.launch(_exceptionHandler) {
             when (val resultData = _repository.upsert(article)) {
-               is ResultData.Success ->
-                  _removedArticle = null
-               is ResultData.Error ->
-                  onErrorEvent(ErrorParams(throwable = resultData.throwable, navEvent = null))
+               is ResultData.Success -> _removedArticle = null
+               is ResultData.Error -> handleErrorEvent(resultData.throwable)
                else -> {}
             }
          }
@@ -110,6 +106,6 @@ class ArticlesViewModel(
    }
 
    companion object {
-      private const val TAG = "<-NewsViewModel"
+      private const val TAG = "<-ArticlesViewModel"
    }
 }
