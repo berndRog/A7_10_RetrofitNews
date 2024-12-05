@@ -1,22 +1,20 @@
 import org.gradle.kotlin.dsl.android
 import java.util.Properties
-   import org.gradle.kotlin.dsl.invoke
-   import org.gradle.kotlin.dsl.test
-   /**
-    * Module-level functions
-    * These functions are used to provide dependencies for the app.
-    *
-    * The first section in the build configuration applies the Android Gradle plugin
-    * to this build and makes the android block available to specify
-    * Android-specific build options.
-    */
-   plugins {
-      alias(libs.plugins.android.application)
-      alias(libs.plugins.kotlin.android)
-      alias(libs.plugins.google.devtools.ksp)
-      alias(libs.plugins.kotlin.serialization)
-      alias(libs.plugins.kotlin.compose.compiler)
-   }
+/**
+ * Module-level functions
+ * These functions are used to provide dependencies for the app.
+ *
+ * The first section in the build configuration applies the Android Gradle plugin
+ * to this build and makes the android block available to specify
+ * Android-specific build options.
+ */
+plugins {
+   alias(libs.plugins.android.application)
+   alias(libs.plugins.kotlin.android)
+   alias(libs.plugins.google.devtools.ksp)
+   alias(libs.plugins.kotlin.serialization)
+   alias(libs.plugins.kotlin.compose.compiler)
+}
 
 /**
  * Locate (and possibly download) a JDK used to build your kotlin
