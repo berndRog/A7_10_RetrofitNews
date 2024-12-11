@@ -1,6 +1,7 @@
 package de.rogallab.mobile
 
 import androidx.room.Room
+import coil.ImageLoader
 import de.rogallab.mobile.data.local.IArticleDao
 import de.rogallab.mobile.data.local.database.AppDatabase
 import de.rogallab.mobile.data.remote.INewsWebservice
@@ -36,10 +37,14 @@ import retrofit2.converter.gson.GsonConverterFactory
 val uiModules: Module = module {
    val tag = "<-uiModules"
 
+   logInfo(tag, "single    -> createImageLoader")
+   single<ImageLoader> { createImageLoader(androidContext()) }
+
    logInfo(tag, "viewModel -> NewsViewModel")
    viewModel<NewsViewModel> {
       NewsViewModel(
          _repository = get<INewsRepository>(),
+         _imageLoader = get<ImageLoader>(),
          _exceptionHandler = get<CoroutineExceptionHandler>()
       )
    }

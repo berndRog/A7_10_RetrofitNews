@@ -16,8 +16,6 @@ sealed class NavScreen(
    val title: String,
    val selectedIcon: ImageVector,
    val unSelectedIcon: ImageVector,
-   val hasNews: Boolean = false,
-   val badgeCount: Int? = null
 ) {
    data object NewsListScreen:  NavScreen(
       route = "NewsListScreen",

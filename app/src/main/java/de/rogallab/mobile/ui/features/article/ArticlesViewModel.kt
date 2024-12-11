@@ -62,7 +62,6 @@ class ArticlesViewModel(
    }
 
    private fun selectArticle(isNews: Boolean, article: Article) {
-      logInfo(TAG, "selectArticle ()")
       _webArticleUiStateFlow.update { it: WebArticleUiState ->
          it.copy(isNews = isNews, article = article)
       }
@@ -70,7 +69,6 @@ class ArticlesViewModel(
    }
 
    private fun upsert() {
-      logInfo(TAG, "upsert()")
       _webArticleUiStateFlow.value.article?.let { article ->
          viewModelScope.launch(_exceptionHandler) {
             when (val resultData = _repository.upsert(article)) {
@@ -85,8 +83,8 @@ class ArticlesViewModel(
 
    private fun remove(article: Article) {
       viewModelScope.launch(_exceptionHandler) {
-         _removedArticle = article
          when (val resultData = _repository.remove(article)) {
+            is ResultData.Success -> _removedArticle = article
             is ResultData.Error -> handleErrorEvent(resultData.throwable)
             else -> {}
          }
@@ -94,7 +92,6 @@ class ArticlesViewModel(
    }
    private fun undoRemove() {
       _removedArticle?.let { article ->
-         logDebug(TAG, "undoRemovePerson()")
          viewModelScope.launch(_exceptionHandler) {
             when (val resultData = _repository.upsert(article)) {
                is ResultData.Success -> _removedArticle = null

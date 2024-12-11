@@ -38,25 +38,14 @@ fun AppNavigationBar(
       topLevelScreens.forEach { topLevelScreen ->
          NavigationBarItem(
             icon = {
-               BadgedBox(
-                  badge = {
-                     if(topLevelScreen.badgeCount != null) {
-                        Badge { Text(text = topLevelScreen.badgeCount.toString() ) }
-                     } else if(topLevelScreen.hasNews) {
-                        //Badge()
-                     }
-                  }
-               ) {
-                  Icon(
-                     imageVector =
+               Icon(
+                  imageVector =
                      if(currentRoute == topLevelScreen.route) topLevelScreen.selectedIcon
                      else                                     topLevelScreen.unSelectedIcon,
-                     contentDescription = topLevelScreen.title
-                  )
-               }
+                  contentDescription = topLevelScreen.title
+               )
             },
-            label = { Text( text = topLevelScreen.title,
-               fontSize = 10.sp)   },
+            label = { Text( text = topLevelScreen.title, fontSize = 10.sp)   },
             alwaysShowLabel = true,
             selected = currentRoute == topLevelScreen.route,
             onClick = {

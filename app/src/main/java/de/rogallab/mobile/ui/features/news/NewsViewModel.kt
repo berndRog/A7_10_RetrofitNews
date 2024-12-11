@@ -1,6 +1,7 @@
 package de.rogallab.mobile.ui.features.news
 
 import androidx.lifecycle.viewModelScope
+import coil.ImageLoader
 import de.rogallab.mobile.data.dtos.News
 import de.rogallab.mobile.domain.INewsRepository
 import de.rogallab.mobile.domain.ResultData
@@ -24,6 +25,7 @@ import kotlinx.coroutines.launch
 
 class NewsViewModel(
    private val _repository: INewsRepository,
+   private val _imageLoader: ImageLoader,
    private val _exceptionHandler: CoroutineExceptionHandler,
 ) : BaseViewModel(_exceptionHandler,TAG) {
 
@@ -83,6 +85,15 @@ class NewsViewModel(
          it.copy(searchText = searchText)
       }
    }
+
+   override fun onCleared() {
+      logInfo(TAG, "onCleared(): clear caches")
+      _imageLoader.memoryCache?.clear()
+      _imageLoader.diskCache?.clear()
+
+      super.onCleared()
+   }
+
 
    companion object {
       private const val TAG = "<-NewsViewModel"

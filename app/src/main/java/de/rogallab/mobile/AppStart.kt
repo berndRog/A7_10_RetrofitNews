@@ -1,13 +1,23 @@
 package de.rogallab.mobile
 
 import android.app.Application
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
+import coil.request.CachePolicy
+import coil.util.DebugLogger
 import de.rogallab.mobile.domain.utilities.logInfo
+import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
+import org.koin.java.KoinJavaComponent.inject
 
-class AppStart : Application() {
+class AppStart : Application() { //, ImageLoaderFactory {
+
+// private lateinit var _imageLoader: ImageLoader
 
    override fun onCreate() {
       super.onCreate()
@@ -24,7 +34,30 @@ class AppStart : Application() {
          // Load modules
          modules(domainModules, dataModules, uiModules)
       }
+
+//    _imageLoader = newImageLoader()
    }
+
+//   override fun newImageLoader(): ImageLoader {
+//      return ImageLoader(this).newBuilder()
+//         .memoryCachePolicy(CachePolicy.ENABLED)
+//         .memoryCache {
+//            MemoryCache.Builder(this)
+//               .maxSizePercent(0.1)
+//               .strongReferencesEnabled(true)
+//               .build()
+//         }
+//         .diskCachePolicy(CachePolicy.ENABLED)
+//         .diskCache {
+//            DiskCache.Builder()
+//               .maxSizePercent(0.03)
+//               .directory(cacheDir)
+//               .build()
+//         }
+//         .logger(DebugLogger())
+//         .build()
+//   }
+
 
    companion object {
       private const val TAG = "<-AppStart"

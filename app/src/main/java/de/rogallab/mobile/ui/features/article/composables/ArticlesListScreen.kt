@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import coil.ImageLoader
 import de.rogallab.mobile.R
 import de.rogallab.mobile.data.dtos.Article
 import de.rogallab.mobile.domain.utilities.logDebug
@@ -51,13 +52,15 @@ import de.rogallab.mobile.ui.features.news.composables.NewsItem
 import de.rogallab.mobile.ui.navigation.NavEvent
 import de.rogallab.mobile.ui.navigation.NavScreen
 import de.rogallab.mobile.ui.navigation.composables.AppNavigationBar
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @ExperimentalComposeUiApi
 @Composable
 fun ArticlesListScreen(
    viewModel: ArticlesViewModel,
-   navController: NavController
+   navController: NavController,
+   imageLoader: ImageLoader = koinInject()
 ) {
    val tag = "<-ArticlesListScreen"
 
@@ -142,7 +145,8 @@ fun ArticlesListScreen(
                ) {
                   NewsItem(
                      article,
-                     onClick = { }
+                     onClick = { },
+                     imageLoader = imageLoader
                   )
                }
             }

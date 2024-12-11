@@ -22,6 +22,8 @@ fun <T> handleApiRequest(
 ): Flow<ResultData<T>> = flow {
 
    try {
+      emit(ResultData.Loading)
+
       // make the api call
       val response: Response<T> = apiCall()
       logResponse(tag, response)

@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil.ImageLoader
 import coil.compose.AsyncImage
 import de.rogallab.mobile.data.dtos.Article
 import de.rogallab.mobile.domain.utilities.formatShortDate
@@ -24,7 +25,8 @@ import de.rogallab.mobile.domain.utilities.toZonedDateTime
 @Composable
 fun NewsItem(
    article: Article,
-   onClick: () -> Unit
+   onClick: () -> Unit,
+   imageLoader: ImageLoader
 ) {
 
    Column(modifier = Modifier
@@ -53,6 +55,7 @@ fun NewsItem(
       article.urlToImage?.let { path: String ->
          AsyncImage(
             model = path,
+            imageLoader = imageLoader,
             contentDescription = "Bild",
             modifier = Modifier
                .height(130.dp)

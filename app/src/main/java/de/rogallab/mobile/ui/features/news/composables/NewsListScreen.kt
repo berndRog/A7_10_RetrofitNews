@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeGestures
 import androidx.compose.foundation.layout.size
@@ -17,17 +17,13 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -41,13 +37,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import coil.ImageLoader
 import de.rogallab.mobile.R
 import de.rogallab.mobile.data.dtos.Article
 import de.rogallab.mobile.domain.utilities.logDebug
@@ -59,13 +53,15 @@ import de.rogallab.mobile.ui.features.article.ArticlesViewModel
 import de.rogallab.mobile.ui.features.news.NewsIntent
 import de.rogallab.mobile.ui.features.news.NewsViewModel
 import de.rogallab.mobile.ui.navigation.composables.AppNavigationBar
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsListScreen(
    newsViewModel: NewsViewModel,
    articlesViewModel: ArticlesViewModel,
-   navController: NavController
+   navController: NavController,
+   imageLoader: ImageLoader = koinInject()
 ) {
    val tag = "<-NewsListScreen"
 
@@ -80,6 +76,8 @@ fun NewsListScreen(
 
    val windowInsets = WindowInsets.systemBars
       .add(WindowInsets.safeGestures)
+      .add(WindowInsets.ime)
+
    val snackbarHostState = remember { SnackbarHostState() }
 
    Scaffold(
@@ -148,7 +146,8 @@ fun NewsListScreen(
                         onClick = {
                            articlesViewModel.onProcessIntent(
                               ArticleIntent.ShowWebArticle(true, article))
-                        }
+                        },
+                        imageLoader = imageLoader
                      )
                   }
                }

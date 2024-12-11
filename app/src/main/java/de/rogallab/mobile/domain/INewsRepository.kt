@@ -1,6 +1,5 @@
 package de.rogallab.mobile.domain
 
-import de.rogallab.mobile.data.dtos.Article
 import de.rogallab.mobile.data.dtos.News
 import kotlinx.coroutines.flow.Flow
 
