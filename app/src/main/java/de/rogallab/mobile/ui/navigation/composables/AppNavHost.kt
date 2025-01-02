@@ -41,7 +41,7 @@ fun AppNavHost(
    val duration = 800  // in ms
    val tag = "<-AppNavHost"
 
-   // N A V H O S T   C O M P O S A B L E S -----------------------------
+   // region N A V H O S T   C O M P O S A B L E S -----------------------------
    NavHost(
       navController = navController,
       startDestination = NavScreen.NewsListScreen.route,
@@ -64,7 +64,7 @@ fun AppNavHost(
          )
       }
       composable(
-         route = NavScreen.ArticleWebScreen.route,
+         route = NavScreen.WebArticleScreen.route,
       ) {
          ArticleWebScreen(
             navController = navController,
@@ -72,8 +72,9 @@ fun AppNavHost(
          )
       }
    }
+   //endregion
 
-   // O N E   T I M E   E V E N T S   N A V I G A T I O N ---------------------
+   //region O N E   T I M E   E V E N T S   N A V I G A T I O N ---------------------
    // Observing the navigation state and handle navigation
    // Combine navStateFlow from multiple ViewModels
    val combinedNavEvent: NavEvent? by combine(
@@ -129,9 +130,10 @@ fun AppNavHost(
          }
       } // end of when (it) {
    } // end of navEvent?.let { it: NavEvent ->
+   //endregion
 }
 
-// A N I M A T I O N S --------------------------------------------------------
+//region A N I M A T I O N S --------------------------------------------------------
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.enterTransition(
    duration: Int
 ) = fadeIn(
@@ -163,3 +165,4 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.popExitTransition(
    targetScale = 3.0f,
    animationSpec = tween(duration)
 ) + fadeOut(animationSpec = tween(duration))
+//endregion

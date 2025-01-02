@@ -24,8 +24,8 @@ sealed class NavScreen(
       unSelectedIcon = Icons.Filled.Search,
    )
 
-   data object ArticleWebScreen:  NavScreen(
-      route = "ArticleWebScreen",
+   data object WebArticleScreen:  NavScreen(
+      route = "WebArticleScreen",
       title ="Anzeigen",
       selectedIcon = Icons.AutoMirrored.Outlined.Article,
       unSelectedIcon = Icons.AutoMirrored.Filled.Article,

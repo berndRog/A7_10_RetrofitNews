@@ -18,9 +18,9 @@ import androidx.compose.ui.unit.dp
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import de.rogallab.mobile.data.dtos.Article
-import de.rogallab.mobile.domain.utilities.formatShortDate
-import de.rogallab.mobile.domain.utilities.formatTimeMin
-import de.rogallab.mobile.domain.utilities.toZonedDateTime
+import de.rogallab.mobile.domain.utilities.isoStringToLocalDateTime
+import de.rogallab.mobile.domain.utilities.toDateString
+import de.rogallab.mobile.domain.utilities.toTimeString
 
 @Composable
 fun NewsItem(
@@ -30,16 +30,15 @@ fun NewsItem(
 ) {
 
    Column(modifier = Modifier
-      .padding(horizontal = 16.dp)
       .fillMaxWidth()
       .clickable { onClick() }
    ) {
 
       var text = article.source?.name ?: ""
-      article.publishedAt.let {
-         val zdt = toZonedDateTime(it)
-         val date = "${zdt.format(formatShortDate)}"
-         val time = "${zdt.format(formatTimeMin)}"
+      article.publishedAt.let { isoString: String ->
+         val ldt = isoStringToLocalDateTime(isoString)
+         val date = ldt.toDateString()
+         val time = ldt.toTimeString()
          text = "${article.source?.name}, $date, $time"
       }
       Text(

@@ -5,15 +5,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.add
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeGestures
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -52,7 +46,7 @@ import de.rogallab.mobile.ui.features.article.ArticleIntent
 import de.rogallab.mobile.ui.features.article.ArticlesViewModel
 import de.rogallab.mobile.ui.features.news.NewsIntent
 import de.rogallab.mobile.ui.features.news.NewsViewModel
-import de.rogallab.mobile.ui.navigation.composables.AppNavigationBar
+import de.rogallab.mobile.ui.navigation.composables.AppNavBar
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,16 +68,16 @@ fun NewsListScreen(
       onBack = {  activity.finish() }
    )
 
-   val windowInsets = WindowInsets.systemBars
-      .add(WindowInsets.safeGestures)
-      .add(WindowInsets.ime)
-
    val snackbarHostState = remember { SnackbarHostState() }
+
+
+
+
+
 
    Scaffold(
       modifier = Modifier
          .fillMaxSize()
-         .padding(windowInsets.asPaddingValues())
          .background(color = MaterialTheme.colorScheme.surface),
       topBar = {
          TopAppBar(
@@ -101,7 +95,7 @@ fun NewsListScreen(
          )
       },
       bottomBar = {
-         AppNavigationBar(navController, newsViewModel)
+         AppNavBar(navController, newsViewModel)
       },
       snackbarHost = {
          SnackbarHost(hostState = snackbarHostState) { data ->
@@ -127,9 +121,7 @@ fun NewsListScreen(
 
          if (newsUiState.loading) {
             Column(
-               modifier = Modifier
-                  .padding(horizontal = 8.dp)
-                  .fillMaxSize(),
+               modifier = Modifier.fillMaxSize(),
                verticalArrangement = Arrangement.Center,
                horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -138,7 +130,9 @@ fun NewsListScreen(
          } else if (newsUiState.news != null) {
 
             newsUiState.news!!.articles?.let { articles: List<Article> ->
-               LazyColumn(state = rememberLazyListState()) {
+               LazyColumn(
+                  modifier = Modifier.padding(horizontal = 16.dp),
+                  state = rememberLazyListState()) {
                   items(articles) { article: Article ->
                      // content
                      NewsItem(

@@ -1,100 +1,224 @@
 package de.rogallab.mobile.domain.utilities
-import java.time.*
-import java.time.format.DateTimeFormatter
 
-val systemZoneId: ZoneId = ZoneId.systemDefault()
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import java.util.Locale
+
+// java.time.LocalDateTime used for formatting
+val zonedId = TimeZone.currentSystemDefault().id
+
+// -----------------------------------------------------------------------------
+// LocalDateTime  Kotlin
+// -----------------------------------------------------------------------------
+fun LocalDateTime.toUtcString(): String =
+   this.toInstant(TimeZone.UTC).toString()
+
+fun LocalDateTime.toIsoString(): String =
+   this.toInstant(TimeZone.of(zonedId)).toString()
+
+fun LocalDateTime.toEpochMillis(): Long =
+   this.toInstant(TimeZone.UTC).toEpochMilliseconds()
+
+fun LocalDateTime.toZonedDateTimeString(
+   zoneId: String                  // IANA time zone id
+): LocalDateTime {
+   val timeZone = TimeZone.of(zoneId)
+   val instant = this.toInstant(timeZone)
+   return instant.toLocalDateTime(timeZone)
+}
+
+// to Date
+fun LocalDateTime.toDateString(
+   locale: Locale = Locale.getDefault()
+): String {
+   val dts: DateTimeString = this.formatted()
+   return when (locale.language) {
+      "de" -> "${dts.day}.${dts.month}.${dts.year}"
+      "en" -> "${dts.month}/${dts.day}/${dts.year}"
+      else -> "${dts.day}.${dts.month}.${dts.year}"
+   }
+}
+
+// to Time
+fun LocalDateTime.toTimeString(): String {
+   val dts: DateTimeString = this.formatted()
+   return "${dts.hour}:${dts.min}:${dts.sec}"
+}
+
+// To DateTime
+fun LocalDateTime.toDateTimeString(
+   locale: Locale = Locale.getDefault(),
+): String {
+   val dts: DateTimeString = this.formatted()
+   return when (locale.language) {
+      "de" -> "${dts.day}.${dts.month}.${dts.year} ${dts.hour}:${dts.min}:${dts.sec}"
+      "en" -> "${dts.month}/${dts.day}/${dts.year} ${dts.hour}:${dts.min}:${dts.sec}"
+      else -> "${dts.day}.${dts.month}.${dts.year} ${dts.hour}:${dts.min}:${dts.sec}"
+   }
+}
+
+private fun LocalDateTime.formatted(): DateTimeString =
+   DateTimeString(
+      year = this.date.year.toString(),
+      month = this.date.monthNumber.toString().padStart(2, '0'),
+      day = this.date.dayOfMonth.toString().padStart(2, '0'),
+      dayOfWeek = this.date.dayOfWeek.name,
+      hour = this.time.hour.toString().padStart(2, '0'),
+      min = this.time.minute.toString().padStart(2, '0'),
+      sec = this.time.second.toString().padStart(2, '0'),
+      mil = (this.time.nanosecond / 1_000_000).toString().padStart(3, '0')
+   )
+
+// -----------------------------------------------------------------------------
+// epochMillis
+// -----------------------------------------------------------------------------
+// to LocalDateTime
+fun toLocalDateTime(epochMillos: Long): LocalDateTime =
+   Instant
+      .fromEpochMilliseconds(epochMillos)
+      .toLocalDateTime(TimeZone.currentSystemDefault())
 
 
+// static extension function
+fun LocalDateTime.Companion.now(): LocalDateTime {
+   val instantNow: Instant = Clock.System.now()
+   // Convert the instant to a LocalDateTime in the system's default time zone
+   val nowDateTime: LocalDateTime =
+      instantNow.toLocalDateTime(TimeZone.currentSystemDefault())
+   return nowDateTime
+}
 
-val formatZDt = DateTimeFormatter.ofPattern("eee dd.MM.yyyy - HH:mm:ss:SSS z")
+// -----------------------------------------------------------------------------
+// ISO 8601 String to LocalDateTime (Kotlinx)
+// -----------------------------------------------------------------------------
+fun isoStringToLocalDateTime(isoString: String): LocalDateTime {
+   val instant = Instant.parse(isoString)
+   return instant.toLocalDateTime(TimeZone.currentSystemDefault())
+}
 
-val formatLongDayOfWeek = DateTimeFormatter.ofPattern("eeee")
-val formatShortDayOfWeek = DateTimeFormatter.ofPattern("EE")
-val formatLongDate = DateTimeFormatter.ofPattern("d. MMMM yyyy")
-val formatMediumDate: DateTimeFormatter? = DateTimeFormatter.ofPattern("d. MMM yyyy")
-val formatShortDate = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-val formatShortTime = DateTimeFormatter.ofPattern("HH:mm")
-val formatTimeMin = DateTimeFormatter.ofPattern("HH:mm")
-val formatTimeSec = DateTimeFormatter.ofPattern("HH:mm:ss")
-val formatTimeMs = DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
-//val formatISO = DateTimeFormatter.ISO_OFFSET_DATE_TIME
-val formatISO = DateTimeFormatter.ISO_ZONED_DATE_TIME
-
-
-// Di., 3. Januar 2023, 10:45 Uhr
-
-fun zonedDateTimeString(zdt: ZonedDateTime) =
-   "${zdt.format(formatShortDayOfWeek)} "+
-   "${zdt.format(formatShortDate)} "+
-   "${zdt.format(formatTimeSec)}"
-
-fun zonedDateTimeNow(
-   zoneId: ZoneId = systemZoneId
-) = ZonedDateTime.now(zoneId)
-
-
-//- LocalDateTime LocalDate, LocalTime <==> ZonedDateTime ------------
-fun toLocalDateTime(zdt: ZonedDateTime): LocalDateTime =
-   zdt.toLocalDateTime()
-fun toLocalDate(zdt: ZonedDateTime): LocalDate =
-   zdt.toLocalDate()
-fun toLocalTime(zdt: ZonedDateTime): LocalTime =
-   zdt.toLocalTime()
-fun toLocalDateTime(date:LocalDate, time:LocalTime): LocalDateTime =
-   time.atDate(date)
-
-fun toZonedDateTime(
-   ldt: LocalDateTime,
-   zoneId: ZoneId = systemZoneId
-): ZonedDateTime  =
-   ldt.atZone( zoneId )
-
-//- ZonedDateTime <==> Zulu-String, epoch --------------------------
-fun toZonedDateTimeUTC(zdt: ZonedDateTime): ZonedDateTime =
-   zdt.withZoneSameInstant(ZoneId.of("+0"))
-
-// zonedDateTime -> zuluString
-fun toZuluString(zdt: ZonedDateTime): String =
-   toZonedDateTimeUTC(zdt).format(formatISO)
-// zuluString --> zonedDateTime
-fun toZonedDateTime(zulu: String): ZonedDateTime =
-   ZonedDateTime.parse(zulu, formatISO)
-                .withZoneSameInstant(systemZoneId)
+private data class DateTimeString(
+   val year: String,
+   val month: String,
+   val day: String,
+   val dayOfWeek: String,
+   val hour: String,
+   val min: String,
+   val sec: String,
+   val mil: String
+)
 
 /*
-   Zulu Time (Coordinated Universal Time) == UTC(GMT) +0
-   UTC	2022-06-27T13:22:58Z
-   Zoned DateTime(germany)
-   Timezone  (Europe/berlin)
-*/
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+//import java.time.ZoneOffset
+//import java.time.format.DateTimeFormatter
+import java.util.Locale
+//import java.time.Instant as JavaInstant
 
-/* SHORT_IDS
-   EST - -05:00
-   HST - -10:00
-   MST - -07:00
-   ACT - Australia/Darwin
-   AET - Australia/Sydney
-   AGT - America/Argentina/Buenos_Aires
-   ART - Africa/Cairo
-   AST - America/Anchorage
-   BET - America/Sao_Paulo
-   BST - Asia/Dhaka
-   CAT - Africa/Harare
-   CNT - America/St_Johns
-   CST - America/Chicago
-   CTT - Asia/Shanghai
-   EAT - Africa/Addis_Ababa
-   ECT - Europe/Paris
-   IET - America/Indiana/Indianapolis
-   IST - Asia/Kolkata
-   JST - Asia/Tokyo
-   MIT - Pacific/Apia
-   NET - Asia/Yerevan
-   NST - Pacific/Auckland
-   PLT - Asia/Karachi
-   PNT - America/Phoenix
-   PRT - America/Puerto_Rico
-   PST - America/Los_Angeles
-   SST - Pacific/Guadalcanal
-   VST - Asia/Ho_Chi_Minh
+// java.time.LocalDateTime used for formatting
+//val javaZoneId = TimeZone.currentSystemDefault().toJavaZoneId()
+//val zonedId: String = TimeZone.currentSystemDefault().id
+
+// -----------------------------------------------------------------------------
+// LocalDateTime  Kotlin
+// -----------------------------------------------------------------------------
+fun LocalDateTime.toUtcString(): String =
+   this.toInstant(TimeZone.UTC).toString()
+
+fun LocalDateTime.toEpochMillis(): Long =
+   this.toInstant(TimeZone.UTC).toEpochMilliseconds()
+
+fun LocalDateTime.toZonedDateTimeString(
+   zoneId: String                  // IANA time zone id
+): LocalDateTime {
+   val timeZone = TimeZone.of(zoneId)
+   val instant = this.toInstant(timeZone)
+   return instant.toLocalDateTime(timeZone)
+}
+
+// to Date
+fun LocalDateTime.toDateString(
+   locale: Locale = Locale.getDefault()
+): String {
+   val dts: DateTimeString = this.formatted()
+   return when (locale.language) {
+      "de" -> "${dts.day}.${dts.month}.${dts.year}"
+      "en" -> "${dts.month}/${dts.day}/${dts.year}"
+      else -> "${dts.day}.${dts.month}.${dts.year}"
+   }
+}
+
+// to Time
+fun LocalDateTime.toTimeString(): String {
+   val dts: DateTimeString = this.formatted()
+   return "${dts.hour}:${dts.min}:${dts.sec}"
+}
+
+// To DateTime
+fun LocalDateTime.toDateTimeString(
+   locale: Locale = Locale.getDefault(),
+): String {
+   val dts: DateTimeString = this.formatted()
+   return when (locale.language) {
+      "de" -> "${dts.day}.${dts.month}.${dts.year} ${dts.hour}:${dts.min}:${dts.sec}"
+      "en" -> "${dts.month}/${dts.day}/${dts.year} ${dts.hour}:${dts.min}:${dts.sec}"
+      else -> "${dts.day}.${dts.month}.${dts.year} ${dts.hour}:${dts.min}:${dts.sec}"
+   }
+}
+
+private fun LocalDateTime.formatted(): DateTimeString =
+   DateTimeString(
+      year = this.date.year.toString(),
+      month = this.date.monthNumber.toString().padStart(2, '0'),
+      day = this.date.dayOfMonth.toString().padStart(2, '0'),
+      dayOfWeek = this.date.dayOfWeek.name,
+      hour = this.time.hour.toString().padStart(2, '0'),
+      min = this.time.minute.toString().padStart(2, '0'),
+      sec = this.time.second.toString().padStart(2, '0'),
+      mil = (this.time.nanosecond / 1_000_000).toString().padStart(3, '0')
+   )
+
+// -----------------------------------------------------------------------------
+// epochMillis
+// -----------------------------------------------------------------------------
+// to LocalDateTime
+fun toLocalDateTime(epochMillis: Long): LocalDateTime =
+   Instant
+      .fromEpochMilliseconds(epochMillis)
+      .toLocalDateTime(TimeZone.currentSystemDefault())
+
+
+// static extension function
+fun LocalDateTime.Companion.now(): LocalDateTime {
+   val instantNow: Instant = Clock.System.now()
+   // Convert the instant to a LocalDateTime in the system's default time zone
+   val nowDateTime: LocalDateTime =
+      instantNow.toLocalDateTime(TimeZone.currentSystemDefault())
+   return nowDateTime
+}
+
+private data class DateTimeString(
+   val year: String,
+   val month: String,
+   val day: String,
+   val dayOfWeek: String,
+   val hour: String,
+   val min: String,
+   val sec: String,
+   val mil: String
+)
+
+
+val LocalDateTime.Companion.Min
+   get() = LocalDateTime(0, 1, 1, 0, 0, 0, 0)
+
+
  */

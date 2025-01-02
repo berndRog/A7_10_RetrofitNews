@@ -1,5 +1,6 @@
 import org.gradle.kotlin.dsl.android
 import java.util.Properties
+
 /**
  * Module-level functions
  * These functions are used to provide dependencies for the app.
@@ -52,10 +53,13 @@ android {
       vectorDrawables {
          useSupportLibrary = true
       }
+
       // API Key from local.properties
       val newsApiKey = localProperties["NEWS_API_KEY"] as String
       buildConfigField("String", "NEWS_API_KEY", "\"$newsApiKey\"")
+
    }
+
    buildTypes {
       release {
          isMinifyEnabled = false
@@ -66,7 +70,6 @@ android {
       sourceCompatibility = JavaVersion.VERSION_17
       targetCompatibility = JavaVersion.VERSION_17
    }
-
    kotlinOptions {
       jvmTarget = "17"
    }
@@ -78,9 +81,6 @@ android {
    buildFeatures {
       compose = true
       buildConfig = true
-   }
-   composeOptions {
-      kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
    }
    packaging {
       resources {
@@ -97,65 +97,57 @@ dependencies {
 
    // Kotlin
    // https://developer.android.com/jetpack/androidx/releases/core
-   implementation(libs.androidx.core.ktx)
+   implementation(libs.core.ktx)
    // Kotlin Coroutines
    // https://kotlinlang.org/docs/releases.html
    implementation (libs.kotlinx.coroutines.core)
    implementation (libs.kotlinx.coroutines.android)
-   // https://github.com/Kotlin/kotlinx-datetime
    implementation (libs.kotlinx.datetime)
 
    // Ui Activity
    // https://developer.android.com/jetpack/androidx/releases/activity
-   implementation(libs.androidx.activity.compose)
+   implementation(libs.compose.activity)
 
    // Ui Compose
    // https://developer.android.com/jetpack/compose/bom/bom-mapping
-   val composeBom = platform(libs.androidx.compose.bom)
+   val composeBom = platform(libs.compose.bom)
    implementation(composeBom)
    testImplementation(composeBom)
    androidTestImplementation(composeBom)
-   implementation(libs.androidx.compose.foundation)
-   implementation(libs.androidx.compose.material3)
-   implementation(libs.androidx.compose.ui)
-   implementation(libs.androidx.compose.ui.graphics)
-   implementation(libs.androidx.compose.ui.tooling)
-   implementation(libs.androidx.compose.ui.tooling.preview)
-   implementation(libs.androidx.compose.material.icons)
-   implementation(libs.androidx.compose.ui.text.google.fonts)
 
-   // Ui Lifecycle
-   // https://developer.android.com/jetpack/androidx/releases/lifecycle
-   implementation(libs.androidx.lifecycle.viewmodel.ktx)
-   // ViewModel utilities for Compose
-   implementation(libs.androidx.lifecycle.viewmodel.compose)
-   // Lifecycle utilities for Compose
-   implementation (libs.androidx.lifecycle.runtime.compose)
+   implementation(libs.compose.foundation)
+   implementation(libs.compose.material.icons)
+   implementation(libs.compose.ui)
+   implementation(libs.compose.ui.graphics)
+   implementation(libs.compose.ui.tooling)
+   implementation(libs.compose.ui.tooling.preview)
+   implementation(libs.compose.material.icons)
+   implementation(libs.compose.material3)
+   implementation(libs.compose.runtime)
+   implementation(libs.compose.google.fonts)
+
 
    // Ui Navigation
    // https://developer.android.com/jetpack/androidx/releases/navigation
    // Jetpack Compose Integration
-   implementation(libs.androidx.navigation.compose)
+   implementation(libs.compose.navigation)
+
+   // Ui Lifecycle
+   // https://developer.android.com/jetpack/androidx/releases/lifecycle
+   // implementation(libs.androidx.lifecycle.viewmodel.ktx)
+   // ViewModel utilities for Compose
+   implementation(libs.compose.lifecycle.viewmodel)
+   // Lifecycle utilities for Compose
+   implementation (libs.compose.lifecycle.runtime)
 
    // Image loading
    // https://coil-kt.github.io/coil/
    implementation(libs.coil.compose)
 
    // Room
-   implementation(libs.androidx.room.ktx)
-   implementation(libs.androidx.room.runtime)
-   ksp(libs.androidx.room.compiler)
-
-   // Koin
-   implementation(project.dependencies.platform(libs.koin.bom))
-   implementation(libs.koin.core)
-   implementation(libs.koin.android)
-   implementation(libs.koin.androidx.compose)
-   implementation(libs.koin.androidx.compose.navigation)
-   //implementation(libs.koin.androidx.startup)
-
-   // Ktor/Kotlin JSON Serializer
-   // implementation(libs.kotlinx.serialization.json)
+   implementation(libs.room.ktx)
+   implementation(libs.room.runtime)
+   ksp(libs.room.compiler)
 
    // Retrofit,  OkHttp Logging
    implementation (libs.gson.json)
@@ -163,6 +155,10 @@ dependencies {
    implementation (libs.retrofit2.gson)
    implementation (libs.retrofit2.logging)
 
+   // Koin
+   implementation(libs.koin.android)
+   implementation(libs.koin.androidx.compose)
+   implementation(libs.koin.androidx.compose.navigation)
 
    // TESTS -----------------------
    testImplementation(libs.junit)
@@ -170,52 +166,45 @@ dependencies {
    // ANDROID TESTS ---------------
    // https://developer.android.com/jetpack/androidx/releases/test
    // To use the androidx.test.core APIs
-   androidTestImplementation(libs.androidx.test.core)
-   androidTestImplementation(libs.androidx.test.core.ktx)
+   androidTestImplementation(libs.test.core)
+   androidTestImplementation(libs.core.ktx)
 
    // To use the androidx.test.espresso
-   androidTestImplementation(libs.androidx.test.espresso.core)
+   androidTestImplementation(libs.test.espresso.core)
 
    // To use the JUnit Extension APIs
-   androidTestImplementation(libs.androidx.test.ext.junit)
-   androidTestImplementation(libs.androidx.test.ext.junit.ktx)
+   androidTestImplementation(libs.test.junit)
+   androidTestImplementation(libs.test.junit.ktx)
+
    // To use the Truth Extension APIs
-   androidTestImplementation(libs.androidx.test.ext.truth)
+   androidTestImplementation(libs.test.truth)
 
    // To use the androidx.test.runner APIs
-   androidTestImplementation(libs.androidx.test.runner)
+   androidTestImplementation(libs.test.runner)
 
    // To use Compose Testing
-   androidTestImplementation(libs.androidx.ui.test.junit4)
+   androidTestImplementation(libs.test.ui.junit4)
    // testing navigation
-   androidTestImplementation(libs.androidx.navigation.testing)
-   // optional - Test helpers
-   androidTestImplementation(libs.androidx.room.testing)
-
-   androidTestImplementation(libs.androidx.arch.core.testing)
-
+   androidTestImplementation(libs.test.navigation)
    // testing coroutines
-   androidTestImplementation(libs.kotlinx.coroutines.test)
+   androidTestImplementation(libs.test.kotlinx.coroutines)
 
-   androidTestImplementation(libs.koin.test)
-   androidTestImplementation(libs.koin.test.junit4)
-   androidTestImplementation(libs.koin.android.test)
+   // Koin Testing
+   androidTestImplementation(libs.test.koin)
+   androidTestImplementation(libs.test.koin.junit4)
+   androidTestImplementation(libs.test.koin.android)
+   // Room Testing
+   androidTestImplementation(libs.test.room)
+   androidTestImplementation(libs.test.arch.core)
+   // Mockito Testing
+   androidTestImplementation(libs.test.mockito.core)
+   androidTestImplementation(libs.test.mockito.android)
+   androidTestImplementation(libs.test.mockito.kotlin)
 
-   androidTestImplementation(libs.mockito.core)
-   androidTestImplementation(libs.mockito.android)
-   androidTestImplementation(libs.mockito.kotlin)
+   androidTestImplementation(libs.test.ui.manifest)
 
-
-   androidTestImplementation(libs.androidx.ui.test.manifest)
-   debugImplementation(libs.androidx.ui.test.manifest)
-
+   debugImplementation(libs.test.ui.manifest)
 }
-
-
-//   val pagingVersion = "3.2.1"
-//   implementation ("androidx.paging:paging-runtime:$pagingVersion")
-//   implementation ("androidx.paging:paging-compose:$pagingVersion")
-
 
 
 

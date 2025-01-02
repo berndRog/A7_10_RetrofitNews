@@ -31,7 +31,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import de.rogallab.mobile.R
-import de.rogallab.mobile.domain.utilities.logDebug
 import de.rogallab.mobile.ui.errors.ErrorParams
 import de.rogallab.mobile.ui.errors.ErrorState
 import de.rogallab.mobile.ui.errors.showError
@@ -39,7 +38,7 @@ import de.rogallab.mobile.ui.features.article.ArticleIntent
 import de.rogallab.mobile.ui.features.article.ArticlesViewModel
 import de.rogallab.mobile.ui.navigation.NavEvent
 import de.rogallab.mobile.ui.navigation.NavScreen
-import de.rogallab.mobile.ui.navigation.composables.AppNavigationBar
+import de.rogallab.mobile.ui.navigation.composables.AppNavBar
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,7 +101,7 @@ fun ArticleWebScreen(
          }
       },
       bottomBar = {
-         AppNavigationBar(navController, viewModel)
+         AppNavBar(navController, viewModel)
       },
       snackbarHost = {
          SnackbarHost(hostState = snackbarHostState) { data ->

@@ -64,7 +64,7 @@ fun SwipeArticleListItem(
          confirmValueChange = { value: SwipeToDismissBoxValue ->
             if (value == SwipeToDismissBoxValue.StartToEnd && !hasNavigated) {
                onNavigate(
-                  NavEvent.NavigateForward(NavScreen.ArticleWebScreen.route))
+                  NavEvent.NavigateForward(NavScreen.WebArticleScreen.route))
                hasNavigated = true  // call only once
                return@rememberSwipeToDismissBoxState true
             } else if (value == SwipeToDismissBoxValue.EndToStart) {

@@ -7,9 +7,7 @@ import de.rogallab.mobile.domain.INewsRepository
 import de.rogallab.mobile.domain.ResultData
 import de.rogallab.mobile.domain.utilities.logDebug
 import de.rogallab.mobile.domain.utilities.logInfo
-import de.rogallab.mobile.ui.IErrorHandler
 import de.rogallab.mobile.ui.base.BaseViewModel
-import de.rogallab.mobile.ui.errors.ErrorParams
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -23,6 +21,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class NewsViewModel(
    private val _repository: INewsRepository,
    private val _imageLoader: ImageLoader,

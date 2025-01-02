@@ -51,7 +51,7 @@ import de.rogallab.mobile.ui.features.article.ArticlesViewModel
 import de.rogallab.mobile.ui.features.news.composables.NewsItem
 import de.rogallab.mobile.ui.navigation.NavEvent
 import de.rogallab.mobile.ui.navigation.NavScreen
-import de.rogallab.mobile.ui.navigation.composables.AppNavigationBar
+import de.rogallab.mobile.ui.navigation.composables.AppNavBar
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,7 +95,7 @@ fun ArticlesListScreen(
          )
       },
       bottomBar = {
-         AppNavigationBar(navController, viewModel)
+         AppNavBar(navController, viewModel)
       },
       snackbarHost = {
          SnackbarHost(hostState = snackbarHostState) { data ->

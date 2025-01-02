@@ -4,8 +4,6 @@ import androidx.lifecycle.viewModelScope
 import de.rogallab.mobile.data.dtos.Article
 import de.rogallab.mobile.domain.IArticleRepository
 import de.rogallab.mobile.domain.ResultData
-import de.rogallab.mobile.domain.utilities.logDebug
-import de.rogallab.mobile.domain.utilities.logInfo
 import de.rogallab.mobile.ui.base.BaseViewModel
 import de.rogallab.mobile.ui.navigation.NavEvent
 import de.rogallab.mobile.ui.navigation.NavScreen
@@ -65,7 +63,7 @@ class ArticlesViewModel(
       _webArticleUiStateFlow.update { it: WebArticleUiState ->
          it.copy(isNews = isNews, article = article)
       }
-      onNavigate(NavEvent.NavigateForward(NavScreen.ArticleWebScreen.route))
+      onNavigate(NavEvent.NavigateForward(NavScreen.WebArticleScreen.route))
    }
 
    private fun upsert() {
