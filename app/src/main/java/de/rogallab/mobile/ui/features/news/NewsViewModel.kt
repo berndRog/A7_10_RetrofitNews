@@ -3,12 +3,10 @@ package de.rogallab.mobile.ui.features.news
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.ImageLoader
-import de.rogallab.mobile.data.dtos.Article
 import de.rogallab.mobile.data.dtos.News
 import de.rogallab.mobile.domain.INewsRepository
 import de.rogallab.mobile.domain.ResultData
 import de.rogallab.mobile.domain.utilities.logDebug
-import de.rogallab.mobile.domain.utilities.logInfo
 import de.rogallab.mobile.ui.IErrorHandler
 import de.rogallab.mobile.ui.INavigationHandler
 import kotlinx.coroutines.CoroutineExceptionHandler

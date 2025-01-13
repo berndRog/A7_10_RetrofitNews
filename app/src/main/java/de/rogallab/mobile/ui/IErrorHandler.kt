@@ -2,7 +2,6 @@ package de.rogallab.mobile.ui
 
 import de.rogallab.mobile.ui.errors.ErrorParams
 import de.rogallab.mobile.ui.errors.ErrorState
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.StateFlow
 
 interface IErrorHandler {

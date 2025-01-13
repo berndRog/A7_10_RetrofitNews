@@ -2,7 +2,6 @@ package de.rogallab.mobile.data.remote
 
 
 import de.rogallab.mobile.data.dtos.News
-import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Query
 
