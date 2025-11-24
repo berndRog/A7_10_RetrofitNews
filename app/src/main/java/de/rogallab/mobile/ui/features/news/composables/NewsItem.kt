@@ -18,10 +18,16 @@ import androidx.compose.ui.unit.dp
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import de.rogallab.mobile.data.dtos.Article
-import de.rogallab.mobile.domain.utilities.isoStringToLocalDateTime
 import de.rogallab.mobile.domain.utilities.toDateString
 import de.rogallab.mobile.domain.utilities.toTimeString
 
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
+
+@OptIn(ExperimentalTime::class)
 @Composable
 fun NewsItem(
    article: Article,
@@ -36,7 +42,7 @@ fun NewsItem(
 
       var text = article.source?.name ?: ""
       article.publishedAt.let { isoString: String ->
-         val ldt = isoStringToLocalDateTime(isoString)
+         val ldt: LocalDateTime = Instant.parse(isoString).toLocalDateTime(TimeZone.currentSystemDefault())
          val date = ldt.toDateString()
          val time = ldt.toTimeString()
          text = "${article.source?.name}, $date, $time"

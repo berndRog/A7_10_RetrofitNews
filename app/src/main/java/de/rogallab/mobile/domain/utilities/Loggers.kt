@@ -1,8 +1,7 @@
 package de.rogallab.mobile.domain.utilities
 
 import android.util.Log
-import de.rogallab.mobile.AppStart.Companion.IS_DEBUG
-import de.rogallab.mobile.AppStart.Companion.IS_INFO
+import de.rogallab.mobile.Globals
 
 fun logError(tag: String, message: String) {
    val msg = formatMessage(message)
@@ -14,17 +13,19 @@ fun logWarning(tag: String, message: String) {
 }
 fun logInfo(tag: String, message: String) {
    val msg = formatMessage(message)
-   if(IS_INFO) Log.i(tag, msg)
+   if(Globals.isInfo) Log.i(tag, msg)
 }
-
 fun logDebug(tag: String, message: String) {
    val msg = formatMessage(message)
-   if (IS_DEBUG) Log.d(tag, msg)
+   if (Globals.isDebug) Log.d(tag, msg)
 }
-
 fun logVerbose(tag: String, message: String) {
-   Log.v(tag, message)
+   if (Globals.isVerbose) Log.v(tag, message)
+}
+fun logComp(tag: String, message: String) {
+   val msg = formatMessage(message)
+   if (Globals.isComp) Log.d(tag, msg)
 }
 
 private fun formatMessage(message: String) =
-   String.format("%-90s %s", message, Thread.currentThread().toString())
+   String.format("%-110s %s", message, Thread.currentThread().toString())

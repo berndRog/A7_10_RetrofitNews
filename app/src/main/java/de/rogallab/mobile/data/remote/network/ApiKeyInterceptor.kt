@@ -4,7 +4,7 @@ import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
 
-class ApiKey(
+class ApiKeyInterceptor(
    private val _apiKey: String? = null
 ) : Interceptor {
 

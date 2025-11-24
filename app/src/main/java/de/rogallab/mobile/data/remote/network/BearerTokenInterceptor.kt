@@ -3,9 +3,8 @@ package de.rogallab.mobile.data.remote.network
 import okhttp3.Interceptor
 import okhttp3.Response
 
-class BearerToken(
+class BearerTokenInterceptor(
    private val _bearerToken: String? = null
-
 ): Interceptor {
    override fun intercept(chain: Interceptor.Chain): Response {
       var request = chain.request()

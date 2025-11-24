@@ -19,5 +19,5 @@ dependencyResolutionManagement {
    }
 }
 
-rootProject.name = "A7_10_RetrofitNews"
+rootProject.name = "A5_10_RetrofitNews"
 include(":app")

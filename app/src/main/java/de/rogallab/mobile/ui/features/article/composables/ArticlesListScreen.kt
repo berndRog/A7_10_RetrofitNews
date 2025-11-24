@@ -1,11 +1,12 @@
 package de.rogallab.mobile.ui.features.article.composables
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,7 +25,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -33,50 +34,46 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavKey
 import coil.ImageLoader
 import de.rogallab.mobile.R
 import de.rogallab.mobile.data.dtos.Article
-import de.rogallab.mobile.ui.errors.ErrorParams
-import de.rogallab.mobile.ui.errors.ErrorState
-import de.rogallab.mobile.ui.errors.showError
+import de.rogallab.mobile.domain.utilities.logDebug
+import de.rogallab.mobile.ui.errors.ErrorHandler
 import de.rogallab.mobile.ui.features.article.ArticleIntent
 import de.rogallab.mobile.ui.features.article.ArticlesViewModel
 import de.rogallab.mobile.ui.features.news.composables.NewsItem
-import de.rogallab.mobile.ui.navigation.NavEvent
-import de.rogallab.mobile.ui.navigation.NavScreen
-import de.rogallab.mobile.ui.navigation.composables.AppNavBar
+import de.rogallab.mobile.ui.navigation.Nav3ViewModelTopLevel
+import de.rogallab.mobile.ui.navigation.NewsList
+import de.rogallab.mobile.ui.navigation.composables.BottomNav3Bar
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinActivityViewModel
+import org.koin.core.parameter.parametersOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @ExperimentalComposeUiApi
 @Composable
 fun ArticlesListScreen(
-   viewModel: ArticlesViewModel,
-   navController: NavController,
-   imageLoader: ImageLoader = koinInject()
+   navViewModel: Nav3ViewModelTopLevel = koinActivityViewModel<Nav3ViewModelTopLevel> { parametersOf(NewsList) },
+   viewModel: ArticlesViewModel = koinActivityViewModel<ArticlesViewModel> { parametersOf(navViewModel) },
+   imageLoader: ImageLoader = koinInject<ImageLoader>(),
+   onNavigateTopLevel: (NavKey) -> Unit
 ) {
    val tag = "<-ArticlesListScreen"
 
    val articlesUiState by viewModel.articlesUiStateFlow.collectAsStateWithLifecycle()
 
-   BackHandler {
-      viewModel.onNavigate(NavEvent.NavigateBack(NavScreen.NewsListScreen.route))
-   }
-
    val snackbarHostState = remember { SnackbarHostState() }
-
    Scaffold(
-      modifier = Modifier
-         .fillMaxSize()
-         .background(color = MaterialTheme.colorScheme.surface),
+      contentColor = MaterialTheme.colorScheme.onBackground,
+      contentWindowInsets = WindowInsets.safeDrawing,
       topBar = {
          TopAppBar(
             title = { Text(stringResource(R.string.savedarticles)) },
             navigationIcon = {
-               IconButton(onClick = {
-                  viewModel.onNavigate(NavEvent.NavigateReverse(NavScreen.NewsListScreen.route))
-               }) {
+               IconButton(
+                  onClick = { onNavigateTopLevel(NewsList) }
+               ) {
                   Icon(
                      imageVector = Icons.AutoMirrored.Default.ArrowBack,
                      contentDescription = stringResource(R.string.back)
@@ -86,55 +83,56 @@ fun ArticlesListScreen(
          )
       },
       bottomBar = {
-         AppNavBar(navController, viewModel)
+         BottomNav3Bar(navViewModel)
       },
       snackbarHost = {
          SnackbarHost(hostState = snackbarHostState) { data ->
-            Snackbar(
-               snackbarData = data,
-               actionOnNewLine = true
-            )
+            Snackbar(snackbarData = data)
          }
-      }
-   ) { paddingValues    ->
-      Column(modifier = Modifier.padding(paddingValues = paddingValues)) {
+      },
+      modifier = Modifier.fillMaxSize()
+   ) { paddingValues ->
+      Column(modifier = Modifier
+         .padding(paddingValues = paddingValues)
+         .padding(horizontal = 16.dp)) {
 
          if (articlesUiState.loading) {
+            SideEffect { logDebug(tag, "Loading...") }
             Column(
-               modifier = Modifier.padding(horizontal = 16.dp).fillMaxSize(),
+               modifier = Modifier.fillMaxSize(),
                verticalArrangement = Arrangement.Center,
                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-               CircularProgressIndicator(modifier = Modifier.size(80.dp))
+               CircularProgressIndicator()
             }
-         } else if (articlesUiState.articles != null) {
+         }
+         else if (articlesUiState.articles != null) {
+            SideEffect { logDebug(tag, "Articles loaded:${articlesUiState.articles?.size}") }
+
+            val sortedArticles = articlesUiState.articles?.sortedBy { it.id }?.reversed()
+               ?: emptyList()
+
             LazyColumn(
-               modifier = Modifier.padding(horizontal = 16.dp),
                state = rememberLazyListState()
             ) {
                items(
-                  items = articlesUiState.articles!!.sortedBy { it.id }.reversed(),
+                  items = sortedArticles,
                   key = { it: Article -> it.id!! },
                ) { article ->
-                  //
-                  SwipeArticleListItem(
+
+                  SwipeArticleWithoutUndoListItem(
                      article = article,                        // item
-                     onNavigate = { it: NavEvent ->
-                        viewModel.onProcessIntent(
-                           ArticleIntent.ShowWebArticle(false, article))
-                        viewModel.onNavigate(it)
-                     },     // navigate to DetailScreen
-                     onProcessIntent = {                     // remove item
+                     onNavigate = {  viewModel.onProcessIntent(
+                        ArticleIntent.ShowWebArticle(false, article)) },
+                     // navigate to DetailScreen
+                     onRemove = {                     // remove item
                         viewModel.onProcessIntent(ArticleIntent.RemoveArticle(article))
-                     },
-                     onErrorEvent = viewModel::onErrorEvent, // undo -> show snackbar
-                     onUndoAction = {                        // undo -> action
-                        viewModel.onProcessIntent(ArticleIntent.UndoRemoveArticle)
                      }
                   ) {
                      NewsItem(
                         article,
-                        onClick = { },
+                        onClick = { viewModel.onProcessIntent(
+                           ArticleIntent.ShowWebArticle(false, article))  },
                         imageLoader = imageLoader
                      )
                   }
@@ -144,15 +142,8 @@ fun ArticlesListScreen(
       }
    } // Scaffold
 
-
-   val errorState: ErrorState
-      by viewModel.errorStateFlow.collectAsStateWithLifecycle()
-
-   LaunchedEffect(errorState.params) {
-      errorState.params?.let { params: ErrorParams ->
-         // show the error with a snackbar
-         showError(snackbarHostState, params,
-            viewModel::onNavigate, viewModel::onErrorEventHandled)
-      }
-   }
+   ErrorHandler(
+      viewModel = viewModel,
+      snackbarHostState = snackbarHostState
+   )
 }

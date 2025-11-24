@@ -13,85 +13,103 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxDefaults
-import androidx.compose.material3.SwipeToDismissBoxState
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import de.rogallab.mobile.R
+import de.rogallab.mobile.Globals.animationDuration
 import de.rogallab.mobile.data.dtos.Article
-import de.rogallab.mobile.ui.errors.ErrorParams
-import de.rogallab.mobile.ui.features.article.ArticleIntent
-import de.rogallab.mobile.ui.navigation.NavEvent
-import de.rogallab.mobile.ui.navigation.NavScreen
+import de.rogallab.mobile.domain.utilities.logComp
+import de.rogallab.mobile.domain.utilities.logDebug
 import kotlinx.coroutines.delay
 
+/**
+ * SwipePersonListItem — Algorithmic Overview
+ *
+ * PURPOSE
+ *  - Displays a row that reacts to horizontal swipe gestures:
+ *      • StartToEnd (left → right): triggers edit navigation
+ *      • EndToStart (right → left): triggers a delete animation + Undo prompt
+ *  - The gesture acts only as an *input trigger*. The component itself never
+ *    remains in a visually dismissed state. Instead, it starts a controlled
+ *    exit animation and defers the actual data mutation to the ViewModel.
+ *
+ * STATE
+ *  - `isRemoved`: ephemeral UI state controlling the AnimatedVisibility exit.
+ *      • Initialized with `remember(person.id)` to reset cleanly after Undo.
+ *  - `SwipeToDismissBoxState`: detects swipe direction only; immediately reset
+ *    to `Settled` so Compose’s internal dismiss logic never takes over.
+ *
+ * ALGORITHM
+ *  1) User swipes → state.currentValue changes.
+ *  2) If StartToEnd → call `onNavigate(person.id)` and snap back.
+ *  3) If EndToStart → set `isRemoved = true` to trigger the exit animation,
+ *     then snap back (we manage visuals ourselves).
+ *  4) A `LaunchedEffect(isRemoved)` waits for the animation duration, then:
+ *       • Calls `onDelete()` to update UI + repository via ViewModel.
+ *       • Calls `onUndo()` to show the Snackbar with Undo action.
+ *  5) If the same person is restored later, Compose recomposes with a new key,
+ *     resetting `isRemoved = false` automatically.
+ *
+ * WHY IT WORKS
+ *  - **Decoupled gesture & state:** prevents conflicts with internal dismiss logic.
+ *  - **Predictable Undo:** keying state by person.id guarantees a fresh state.
+ *  - **Smooth UX:** user gets immediate visual feedback; expensive I/O happens later.
+ *
+ * This pattern demonstrates an *Optimistic-then-Persist* update:
+ * The UI responds instantly, while persistence catches up asynchronously.
+ */
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SwipeArticleListItem(
+fun SwipeArticleWithoutUndoListItem(
    article: Article,
-   onNavigate: (NavEvent) -> Unit,
-   onProcessIntent: (ArticleIntent) -> Unit,
-   onErrorEvent: (ErrorParams) -> Unit,
-   onUndoAction: () -> Unit,
-   animationDuration: Int = 1000,
+   onNavigate: (Int) -> Unit,
+   onRemove: () -> Unit,
    content: @Composable () -> Unit
 ) {
+   val tag = "<-SwipePersonLiItem"
+   val compositionCount = remember { mutableIntStateOf(1) }
+   SideEffect { logComp(tag, "Composition #${compositionCount.intValue++}") }
 
-   var isRemoved by remember{ mutableStateOf(false) }
-   var isUndo by remember{ mutableStateOf(false) }
-   var hasNavigated by remember { mutableStateOf(false) }
+   // Steuert nur die Sichtbarkeit / Exit-Animation
+   var isRemoved by remember(article.id) { mutableStateOf(false) }
 
-   val state: SwipeToDismissBoxState =
-      rememberSwipeToDismissBoxState(
-         initialValue = SwipeToDismissBoxValue.Settled,
-         confirmValueChange = { value: SwipeToDismissBoxValue ->
-            if (value == SwipeToDismissBoxValue.StartToEnd && !hasNavigated) {
-               onNavigate(
-                  NavEvent.NavigateForward(NavScreen.WebArticleScreen.route))
-               hasNavigated = true  // call only once
-               return@rememberSwipeToDismissBoxState true
-            } else if (value == SwipeToDismissBoxValue.EndToStart) {
-               isRemoved = true  // with animation
-               return@rememberSwipeToDismissBoxState true
-            } else return@rememberSwipeToDismissBoxState false
-         },
-         positionalThreshold = SwipeToDismissBoxDefaults.positionalThreshold,
-      )
+   val state = rememberSwipeToDismissBoxState(
+      positionalThreshold = SwipeToDismissBoxDefaults.positionalThreshold
+   )
 
-   val undoDeletePerson = stringResource(R.string.undoDelete)
-   val undoAnswer = stringResource(R.string.undoAnswer)
+   // Swipe → Aktion
+   LaunchedEffect(state.currentValue) {
+      when (state.currentValue) {
+         SwipeToDismissBoxValue.StartToEnd -> {
+            logDebug(tag, "Swipe to Edit")
+            article.id?.let { onNavigate(it) }
+            state.snapTo(SwipeToDismissBoxValue.Settled)
+         }
+         SwipeToDismissBoxValue.EndToStart -> {
+            logDebug(tag, "Swipe to Delete for ${article.id} ")
+            isRemoved = true                // Start Exit-Animation
+            state.snapTo(SwipeToDismissBoxValue.Settled)
+         }
+         SwipeToDismissBoxValue.Settled -> Unit
+      }
+   }
 
-   LaunchedEffect(key1 = isRemoved) {
-      if(isRemoved) {
+   // Sicherheitshalber zurücksetzen beim Identitätswechsel
+   LaunchedEffect(article.id) {
+      state.snapTo(SwipeToDismissBoxValue.Settled)
+   }
+
+   // Nach Ende der Animation endgültig entfernen (ohne Undo)
+   LaunchedEffect(isRemoved, article.id) {
+      if (isRemoved) {
          delay(animationDuration.toLong())
-         onProcessIntent(ArticleIntent.RemoveArticle(article))
-         // undo remove?
-         var params = ErrorParams(
-            message = undoDeletePerson,
-            actionLabel = undoAnswer,
-            duration = SnackbarDuration.Short,
-            withUndoAction = true,
-            onUndoAction = onUndoAction,
-            navEvent = NavEvent.NavigateReverse(route = NavScreen.ArticlesListScreen.route)
-         )
-         onErrorEvent(params)
+         onRemove()        // ViewModel / Liste aktualisieren
       }
    }
 
@@ -102,31 +120,27 @@ fun SwipeArticleListItem(
          shrinkTowards = Alignment.Top
       ) + fadeOut()
    ) {
-
       SwipeToDismissBox(
          state = state,
          backgroundContent = { SetSwipeBackground(state) },
-         modifier = Modifier.padding(vertical = 4.dp),
-         // enable dismiss from start to end (left to right)
          enableDismissFromStartToEnd = true,
-         // enable dismiss from end to start (right to left)
-         enableDismissFromEndToStart = true
+         enableDismissFromEndToStart = true,
+         modifier = Modifier.padding(vertical = 4.dp)
       ) {
          content()
       }
    }
 }
 
-@Composable
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun SetSwipeBackground(state: SwipeToDismissBoxState) {
-
-   // Determine the properties of the swipe
    val (colorBox, colorIcon, alignment, icon, description, scale) =
-      getSwipeProperties(state)
+      GetSwipeProperties(state)
 
    Box(
-      Modifier.fillMaxSize()
+      Modifier
+         .fillMaxSize()
          .background(
             color = colorBox,
             shape = RoundedCornerShape(10.dp)
@@ -135,7 +149,7 @@ fun SetSwipeBackground(state: SwipeToDismissBoxState) {
       contentAlignment = alignment
    ) {
       Icon(
-         icon,
+         imageVector = icon,
          contentDescription = description,
          modifier = Modifier.scale(scale),
          tint = colorIcon
@@ -145,52 +159,39 @@ fun SetSwipeBackground(state: SwipeToDismissBoxState) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun getSwipeProperties(
+fun GetSwipeProperties(
    state: SwipeToDismissBoxState
 ): SwipeProperties {
+   val direction = state.dismissDirection
 
-   // Set the color of the box
-   // https://hslpicker.com
-   val colorBox: Color = when (state.targetValue) {
-      SwipeToDismissBoxValue.Settled -> MaterialTheme.colorScheme.surface
-      SwipeToDismissBoxValue.StartToEnd -> Color.hsl(120.0f,0.80f,0.30f, 1f) //Color.Green    // move to right
-      // move to left  color: dark red
-      SwipeToDismissBoxValue.EndToStart -> Color.hsl(0.0f,0.90f,0.40f,1f)//Color.Red      // move to left
+   val colorBox: Color = when (direction) {
+      SwipeToDismissBoxValue.StartToEnd -> Color(0xFF008000) // Green
+      SwipeToDismissBoxValue.EndToStart -> Color(0xFFB22222) // Firebrick Red
+      else -> MaterialTheme.colorScheme.surface
    }
+   val colorIcon: Color = Color.White
 
-   // Set the color of the icon
-   val colorIcon: Color = when (state.targetValue) {
-      SwipeToDismissBoxValue.Settled -> MaterialTheme.colorScheme.onSurface
-      else -> Color.White
-   }
-
-   // Set the alignment of the icon
-   val alignment: Alignment = when (state.dismissDirection) {
+   val alignment: Alignment = when (direction) {
       SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
       SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
       else -> Alignment.Center
    }
 
-   // Set the icon
-   val icon: ImageVector = when (state.dismissDirection) {
-      SwipeToDismissBoxValue.StartToEnd -> Icons.Outlined.Edit   // left
-      SwipeToDismissBoxValue.EndToStart -> Icons.Outlined.Delete // right
+   val icon: ImageVector = when (direction) {
+      SwipeToDismissBoxValue.StartToEnd -> Icons.Outlined.Edit
+      SwipeToDismissBoxValue.EndToStart -> Icons.Outlined.Delete
       else -> Icons.Outlined.Info
    }
 
-   // Set the description
-   val description: String = when (state.dismissDirection) {
-      SwipeToDismissBoxValue.StartToEnd -> "Editieren"
-      SwipeToDismissBoxValue.EndToStart -> "Löschen"
+   val description: String = when (direction) {
+      SwipeToDismissBoxValue.StartToEnd -> "Edit"
+      SwipeToDismissBoxValue.EndToStart -> "Delete"
       else -> "Unknown Action"
    }
 
-   // Set the scale
-   val scale = if (state.targetValue == SwipeToDismissBoxValue.Settled)
-      1.2f else 1.8f
+   val scale = if (state.targetValue == SwipeToDismissBoxValue.Settled) 1.2f else 1.2f
 
-   return SwipeProperties(
-      colorBox, colorIcon, alignment, icon, description, scale)
+   return SwipeProperties(colorBox, colorIcon, alignment, icon, description, scale)
 }
 
 data class SwipeProperties(

@@ -6,7 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import de.rogallab.mobile.ui.base.BaseActivity
-import de.rogallab.mobile.ui.navigation.composables.AppNavHost
+import de.rogallab.mobile.ui.navigation.composables.AppNavigation
+
 import de.rogallab.mobile.ui.theme.AppTheme
 import org.koin.compose.KoinContext
 
@@ -16,13 +17,12 @@ class MainActivity : BaseActivity(TAG) {
       super.onCreate(savedInstanceState)
 
       setContent {
-         KoinContext {
             AppTheme {
                Surface(modifier = Modifier.fillMaxSize()) {
-                  AppNavHost()
+                  AppNavigation()
                }
             }
-         }
+
       }
    }
 

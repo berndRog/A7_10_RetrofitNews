@@ -2,40 +2,49 @@ package de.rogallab.mobile.ui.errors
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import de.rogallab.mobile.domain.utilities.logVerbose
-import de.rogallab.mobile.ui.navigation.NavEvent
+import de.rogallab.mobile.domain.utilities.logDebug
+import de.rogallab.mobile.domain.utilities.logError
 
 suspend fun showError(
    snackbarHostState: SnackbarHostState,  // State ↓
-   params: ErrorParams,                   // State ↓
-   onNavigate: (NavEvent) -> Unit,        // Event ↑
-   onErrorEventHandled: () -> Unit = { }  // Event ↑
+   errorState: ErrorState,                // State ↓
 ) {
-   // Show Snackbar
-   logVerbose("<-showError", "Show snackbar: $params ")
+   val message =  errorState.message
+   logError("<-showError", "Displaying Snackbar: $message") // Changed log slightly for clarity
 
+   // Show the Snackbar with the provided parameters
+   //
+   // message:           this is the primary text shown in the snackbar
+   // actionLabel:       Text for an optional action button on the Snackbar. If clicked showSnackbar()
+   //                    returns SnackbarResult.ActionPerformed and the onActionPerform() is called,
+   //                    which can be "do nothing"
+   // withDismissAction: if true, shows a dismiss icon X on the Snackbar. If clicked, or if the snackbar
+   //                    times out or is swiped away, showSnackbar() returns SnackbarResult.Dismissed,
+   //                    and onDismissed() is called which can be "do nothing".
+   // duration:          Defines how long the Snackbar will be visible.
    snackbarHostState.showSnackbar(
-      message = params.throwable?.message ?: params.message,
-      actionLabel = params.actionLabel,
-      withDismissAction = params.withUndoAction,
-      duration = params.duration
+      message = message,
+      actionLabel = errorState.actionLabel,
+      withDismissAction = errorState.withDismissAction,
+      duration = errorState.duration
    ).also { result: SnackbarResult ->
       // Handle Snackbar action
       when (result) {
          SnackbarResult.ActionPerformed -> {
-            logVerbose("<-showError", "Snackbar action performed")
-            params.onUndoAction()
+            logDebug("<-showError", "Snackbar action performed")
+            errorState.onActionPerform()
          }
          SnackbarResult.Dismissed -> {
-            logVerbose("<-showError", "Snackbar dismissed")
+            logDebug("<-showError", "Snackbar dismissed")
+            errorState.onDismissed()
+
+            // Only navigate after dismissal
+            if (errorState.navKey != null) {
+               logDebug("<-showError", "Executing delayed navigation")
+               errorState.onDelayedNavigation(errorState.navKey)
+            }
          }
       }
-   }
-   // reset the errorState, params are copied to showError
-   onErrorEventHandled()
 
-   // navigate to target
-   params.navEvent?.let { navEvent ->
-      onNavigate(navEvent)
    }
 }

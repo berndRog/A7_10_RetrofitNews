@@ -1,14 +1,17 @@
-package de.rogallab.mobile
+package de.rogallab.mobile.di
 
+import androidx.navigation3.runtime.NavKey
 import androidx.room.Room
 import coil.ImageLoader
+import de.rogallab.mobile.AppStart
+import de.rogallab.mobile.createImageLoader
 import de.rogallab.mobile.data.local.IArticleDao
 import de.rogallab.mobile.data.local.database.AppDatabase
 import de.rogallab.mobile.data.remote.INewsWebservice
-import de.rogallab.mobile.data.remote.network.ApiKey
-import de.rogallab.mobile.data.remote.network.BearerToken
+import de.rogallab.mobile.data.remote.network.ApiKeyInterceptor
+import de.rogallab.mobile.data.remote.network.BearerTokenInterceptor
 import de.rogallab.mobile.data.remote.network.NetworkConnection
-import de.rogallab.mobile.data.remote.network.NetworkConnectivity
+import de.rogallab.mobile.data.remote.network.ConnectivityInterceptor
 import de.rogallab.mobile.data.remote.network.createOkHttpClient
 import de.rogallab.mobile.data.remote.network.createRetrofit
 import de.rogallab.mobile.data.remote.network.createWebservice
@@ -18,111 +21,57 @@ import de.rogallab.mobile.domain.IArticleRepository
 import de.rogallab.mobile.domain.INewsRepository
 import de.rogallab.mobile.domain.utilities.logError
 import de.rogallab.mobile.domain.utilities.logInfo
-import de.rogallab.mobile.ui.IErrorHandler
-import de.rogallab.mobile.ui.INavigationHandler
-import de.rogallab.mobile.ui.errors.ErrorHandler
 import de.rogallab.mobile.ui.features.article.ArticlesViewModel
 import de.rogallab.mobile.ui.features.news.NewsViewModel
-import de.rogallab.mobile.ui.navigation.NavigationHandler
+import de.rogallab.mobile.ui.navigation.INavHandler
+import de.rogallab.mobile.ui.navigation.Nav3ViewModelTopLevel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-
-typealias CoroutineDispatcherMain = CoroutineDispatcher
-typealias CoroutineDispatcherIo = CoroutineDispatcher
-typealias CoroutineScopeMain = CoroutineScope
-typealias CoroutineScopeIo = CoroutineScope
-
-val domainModules: Module = module {
-   val tag = "<-domainModules"
-
-   logInfo(tag, "factory   -> CoroutineExceptionHandler")
-   factory<CoroutineExceptionHandler> {
-      CoroutineExceptionHandler { _, exception ->
-         logError(tag, "Coroutine exception: ${exception.localizedMessage}")
-      }
-   }
-   logInfo( tag, "factory  -> CoroutineDispatcherMain")
-   factory<CoroutineDispatcherMain> { Dispatchers.Main }
-
-   logInfo(tag, "factory   -> CoroutineDispatcherIo)")
-   factory<CoroutineDispatcherIo>{ Dispatchers.IO }
-
-   logInfo(tag, "factory   -> CoroutineScopeMain")
-   factory<CoroutineScopeMain> {
-      CoroutineScope(
-         SupervisorJob() +
-            get<CoroutineDispatcherIo>()
-      )
-   }
-
-   logInfo(tag, "factory   -> CoroutineScopeIo")
-   factory<CoroutineScopeIo> {
-      CoroutineScope(
-         SupervisorJob() +
-            get<CoroutineDispatcherIo>()
-      )
-   }
-}
-
-
-val uiModules: Module = module {
-   val tag = "<-uiModules"
+val defModules: Module = module {
+   val tag = "<-defModules"
+   // Provide Dispatchers
+   //logInfo(tag, "single    -> MainDispatcher:CoroutineDispatcher")
+   //single<CoroutineDispatcher>(named("MainDispatcher")) { Dispatchers.Main }
+   logInfo(tag, "single    -> DispatcherIo:CoroutineDispatcher")
+   single<CoroutineDispatcher>(named("DispatcherIo")) { Dispatchers.IO }
+   //logInfo(tag, "single    -> DispatcherDefault:CoroutineDispatcher")
+   //single<CoroutineDispatcher>(named("DispatcherDefault")) { Dispatchers.Default }
 
    logInfo(tag, "single    -> createImageLoader")
    single<ImageLoader> { createImageLoader(androidContext()) }
 
-   factory<IErrorHandler> {
-      ErrorHandler(
-         _coroutineScopeMain = get<CoroutineScopeMain>(),
-         _exceptionHandler = get<CoroutineExceptionHandler>()
-      )
-   }
-
-   factory<INavigationHandler> {
-      NavigationHandler(
-         _coroutineScopeMain = get<CoroutineScopeMain>(),
-         _exceptionHandler = get<CoroutineExceptionHandler>()
-      )
-   }
-
+   logInfo(tag, "viewModel -> Nav3ViewModelTopLevel as INavHandler (with params)")
+   viewModel<Nav3ViewModelTopLevel> { (startDestination: NavKey) ->  // Parameter for startDestination
+      Nav3ViewModelTopLevel(startDestination = startDestination)
+   } bind INavHandler::class
 
    logInfo(tag, "viewModel -> NewsViewModel")
-   viewModel<NewsViewModel> {
+   viewModel<NewsViewModel> { (navHandler: INavHandler) ->
       NewsViewModel(
          _repository = get<INewsRepository>(),
          _imageLoader = get<ImageLoader>(),
-         _errorHandler = get<IErrorHandler>(),
-         _navigationHandler = get<INavigationHandler>(),
-         _exceptionHandler = get<CoroutineExceptionHandler>()
+         navHandler = navHandler,
       )
    }
    logInfo(tag, "viewModel -> ArticlesViewModel")
-   viewModel<ArticlesViewModel> {
+   viewModel<ArticlesViewModel> { (navHandler: INavHandler) ->
       ArticlesViewModel(
          _repository = get<IArticleRepository>(),
-         _errorHandler = get<IErrorHandler>(),
-         _navigationHandler = get<INavigationHandler>(),
-         _exceptionHandler = get<CoroutineExceptionHandler>()
+         _navHandler = navHandler,
       )
    }
-}
-
-
-val dataModules = module {
-   val tag = "<-dataModules"
 
    // local Room Database -----------------------------------------------------
    logInfo(tag, "single    -> AppDatabase")
@@ -130,7 +79,7 @@ val dataModules = module {
       Room.databaseBuilder(
          context = androidContext(),
          klass = AppDatabase::class.java,
-         name = AppStart.DATABASE_NAME
+         name = AppStart.Companion.DATABASE_NAME
       ).build()
    }
    logInfo(tag, "single    -> IArticleDao")
@@ -142,25 +91,27 @@ val dataModules = module {
    single<NetworkConnection> {
       NetworkConnection(context = androidContext())
    }
-   logInfo(tag, "single    -> NetworkConnectivity")
-   single<NetworkConnectivity> { NetworkConnectivity(get<NetworkConnection>()) }
+   logInfo(tag, "single    -> ConnectivityInterceptor")
+   single<ConnectivityInterceptor> {
+      ConnectivityInterceptor(get<NetworkConnection>())
+   }
 
-   logInfo(tag, "single    -> BearerToken")
-   single<BearerToken> { BearerToken() }
+   logInfo(tag, "single    -> InterceptorApiKey")
+   single<ApiKeyInterceptor> { ApiKeyInterceptor(AppStart.Companion.API_KEY) }
 
-   logInfo(tag, "single    -> ApiKey")
-   single<ApiKey> { ApiKey(AppStart.API_KEY) }
+   logInfo(tag, "single    -> InterceptorBearerToken")
+   single<BearerTokenInterceptor> { BearerTokenInterceptor() }
 
    logInfo(tag, "single    -> HttpLoggingInterceptor")
    single<HttpLoggingInterceptor> {
-      HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
+      HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY  }
    }
    logInfo(tag, "single    -> OkHttpClient")
    single<OkHttpClient> {
       createOkHttpClient(
-         bearerToken = get<BearerToken>(),
-         apiKey = get<ApiKey>(),
-         networkConnectivity = get<NetworkConnectivity>(),
+         bearerToken = get<BearerTokenInterceptor>(),
+         apiKey = get<ApiKeyInterceptor>(),
+         networkConnectivity = get<ConnectivityInterceptor>(),
          loggingInterceptor = get<HttpLoggingInterceptor>()
       )
    }
@@ -188,16 +139,14 @@ val dataModules = module {
    single<INewsRepository> {
       NewsRepository(
          _newsWebservice = get<INewsWebservice>(),
-         _dispatcher = get<CoroutineDispatcherIo>(),
-         _exceptionHandler = get<CoroutineExceptionHandler>()
+         _dispatcher = get<CoroutineDispatcher>(named("DispatcherIo")   )
       )
    }
    logInfo(tag, "single    -> ArticleRepository: IArticleRepository")
    single<IArticleRepository> {
       ArticleRepository(
          _articleDao = get<IArticleDao>(),
-         _dispatcher = get<CoroutineDispatcherIo>(),
-         _exceptionHandler = get<CoroutineExceptionHandler>()
+         _dispatcher = get<CoroutineDispatcher>(named("DispatcherIo")),
       )
    }
 

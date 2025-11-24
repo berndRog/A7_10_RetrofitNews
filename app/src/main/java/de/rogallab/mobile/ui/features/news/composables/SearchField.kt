@@ -51,7 +51,6 @@ fun SearchField(
 
    OutlinedTextField(
       modifier = Modifier
-         .padding(horizontal = 8.dp)
          .padding(bottom = 8.dp)
          .fillMaxWidth(),
       value = localSearchText,
@@ -65,7 +64,10 @@ fun SearchField(
       leadingIcon = {
          Icon(imageVector = Icons.Outlined.Search,
             contentDescription = "Search News",
-            modifier = Modifier.clickable { onTriggerSearch() })
+            modifier = Modifier.clickable {
+               onTriggerSearch()
+            }
+         )
       },
       trailingIcon = {
          Icon(imageVector = Icons.Outlined.Clear,

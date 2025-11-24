@@ -1,6 +1,7 @@
 package de.rogallab.mobile
 
 import android.app.Application
+import de.rogallab.mobile.di.defModules
 import de.rogallab.mobile.domain.utilities.logInfo
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -22,19 +23,21 @@ class AppStart : Application() {
          // Reference Android context
          androidContext(this@AppStart)
          // Load modules
-         modules(domainModules, dataModules, uiModules)
+         modules(defModules)
       }
    }
 
    companion object {
       private const val TAG = "<-AppStart"
-      const val IS_INFO = true
-      const val IS_DEBUG = true
       const val DATABASE_NAME:    String = "A7_10_RetrofitNews.db"
       const val DATABASE_VERSION: Int    = 1
 
       const val BASE_URL: String = "https://newsapi.org/"
       const val API_KEY:  String = BuildConfig.NEWS_API_KEY
       const val BEARER_TOKEN:  String = ""
+
+      const val isInfo = true
+      const val isDebug = true
+
    }
 }

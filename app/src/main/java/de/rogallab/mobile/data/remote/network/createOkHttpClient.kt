@@ -6,9 +6,9 @@ import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
 
 fun createOkHttpClient(
-   bearerToken: BearerToken,
-   apiKey: ApiKey,
-   networkConnectivity: NetworkConnectivity,
+   bearerToken: BearerTokenInterceptor,
+   apiKey: ApiKeyInterceptor,
+   networkConnectivity: ConnectivityInterceptor,
    loggingInterceptor: HttpLoggingInterceptor
 ) : OkHttpClient {
    logDebug("<-OkHttpClient", "create()")
